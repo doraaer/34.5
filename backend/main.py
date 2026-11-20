@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from backend.core import database as db
 from backend.routes.core import router as core_router
+from backend.routes.internal import router as internal_router
 from backend.partner.router import router as partner_router
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,6 +17,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="DORA Hackathon Starter", lifespan=lifespan)
 app.include_router(core_router)
+app.include_router(internal_router)
 app.include_router(partner_router)
 app.mount("/static", StaticFiles(directory=ROOT / "frontend" / "static"), name="static")
 
