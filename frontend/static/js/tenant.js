@@ -147,7 +147,8 @@
     opener.setAttribute("aria-expanded", "true");
     opener.classList.add("opening");
     setTimeout(() => {
-      opener.hidden = true;
+      $("dora-landing").hidden = true;
+      $("dora-app").hidden = false;
       $("conversation").hidden = false;
       $("conversation").querySelector("h1").focus({ preventScroll: true });
     }, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 420);

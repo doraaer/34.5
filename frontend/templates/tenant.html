@@ -1,9 +1,16 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DORA · Your home, looked after</title><link rel="stylesheet" href="/static/css/experience.css"><script defer src="/static/js/experience.js"></script><script defer src="/static/js/tenant.js"></script><link rel="stylesheet" href="/static/css/resident.css"></head>
-<body><a class="skip" href="#main">Skip to content</a>
+<body>
+<section id="dora-landing" aria-label="DORA home assistant">
+  <div class="lava" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+  <button id="open-dora" type="button" aria-label="Open DORA" aria-expanded="false" aria-controls="dora-app">
+    <img src="/static/images/dora-bubble.jpg" width="1254" height="1254" alt="" fetchpriority="high">
+  </button>
+</section>
+<div id="dora-app" hidden>
+<a class="skip" href="#main">Skip to content</a>
 <header class="topbar"><a class="brand" href="/tenant">DORA</a><nav><a href="#requests">Your requests</a></nav></header>
 <main id="main" class="shell"><section class="welcome" aria-label="DORA home assistant">
-<button id="open-dora" aria-expanded="false" aria-controls="conversation"><span class="glass-mark" aria-hidden="true"><i></i></span><span>Open DORA</span></button>
 <div id="conversation" hidden><div class="pearl" aria-hidden="true"></div><h1 tabindex="-1">What’s wrong with your heating?</h1><button type="button" disabled>Talk to DORA</button><p class="hint">Voice is offline. Write to DORA below.</p><div id="elevenlabs-agent-container"></div><form id="report-form"><fieldset id="report-fields" disabled><legend class="sr-only">Report a heating issue</legend>
 <label class="sr-only" for="description">What’s wrong with your heating?</label><textarea id="description" rows="1" minlength="3" maxlength="3000" required placeholder="Describe your heating issue…"></textarea><p class="hint">Tell us what you noticed and when it started. Your home details are already included.</p>
 <details class="urgency"><summary>Set urgency</summary><label for="priority">How urgent is it?</label><select id="priority"><option value="routine">Routine maintenance</option><option value="urgent">Urgent heating issue</option></select></details><button class="primary" id="create" type="submit">Send request</button></fieldset></form>
@@ -18,4 +25,5 @@
 <form id="booking-form"><fieldset id="booking-fields"><legend class="sr-only">Availability and consent</legend><label for="slot">Your available window · Berlin time</label><select id="slot" required><option value="">Loading available windows…</option></select><button id="retry-slots" class="text-button" type="button" hidden>Reload available windows</button><p id="slot-feedback" class="hint" role="status"></p>
 <label class="check"><input type="checkbox" id="booking-consent" required><span>I authorize a visit within the selected window.</span></label><label class="check"><input type="checkbox" id="sharing-consent" required><span>I agree to share my address, issue and selected window with the contracted maintenance company.</span></label><button id="dispatch" type="submit" class="primary">Send request to provider</button></fieldset></form>
 <p class="hint">The provider must accept before your appointment is confirmed. You can close this page and check back later.</p></section><p id="booking-feedback" class="feedback" role="status"></p></section></div>
-</section><footer><a href="/partner">Provider demo</a> <a href="/centrix">Centrix demo</a> <span>Fictional resident, provider and Centrix records. The technician diagnoses and repairs the issue.</span></footer></main></body></html>
+</section><footer><a href="/partner">Provider demo</a> <a href="/centrix">Centrix demo</a> <span>Fictional resident, provider and Centrix records. The technician diagnoses and repairs the issue.</span></footer></main></div></body></html>
+
