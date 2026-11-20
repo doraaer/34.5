@@ -1,9 +1,22 @@
 {
-  "platform": "ElevenLabs Conversational AI",
-  "agent_name": "DORA",
-  "language": "en",
+  "platform": "ElevenLabs Agents (Conversational AI)",
+  "agent_name": "DORA – Team 34.5 (reltix demo)",
+  "agent_id": "agent_4801m7xey02xfvdv8zjbhhwg2j9h",
   "agent_id_env": "ELEVENLABS_AGENT_ID",
+  "agent_id_note": "The agent ID is not a secret: the browser needs it to start a session. Never commit an ElevenLabs API key.",
+  "language": "en",
+  "llm": "deepseek-v41-flash (ElevenLabs default at creation; revisit if tool calling is unreliable)",
+  "voice_id": "cjVigY5qzO86Huf0OWal (ElevenLabs default agent voice)",
+  "first_message": "Hi, this is DORA, the AI assistant from your property management. Give me a second to pull up your apartment.",
   "prompt_file": "agent/system-prompt.md",
-  "tool_definitions_file": "agent/tool-definitions.example.json",
-  "integration_status": "not_configured"
+  "tools_file": "agent/tools.json",
+  "tool_type": "client (executed in the browser by agent/web/dora-voice.js, calling the local FastAPI)",
+  "tool_ids": {
+    "get_tenant_context": "tool_3101m7xeyescfdw8mnb0yp6pf3mm",
+    "create_maintenance_case": "tool_2301m7xeypccf1v9y8fm42a0peyq",
+    "save_availability_and_consent": "tool_1201m7xeyq36fm2t94jjavetv65r",
+    "dispatch_to_partner": "tool_1201m7xeyqtpebcs23h3bxk8fv3d",
+    "get_case_status": "tool_3901m7xeyrh5ehma9qm8ngq39sfv"
+  },
+  "integration_status": "agent_created_tools_attached; browser client pending (agent/web)"
 }
