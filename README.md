@@ -15,6 +15,10 @@
 
 We do **not** diagnose exact boiler faults. Provider handles technical diagnosis. Central heating is property context, not a complex heating simulator. Standard work is pre-authorized in this demo. Actual contractors and real centrix are NOT connected.
 
+## Planned calendar integration
+
+After the local flow works, connect one Google Calendar demo account for free/busy lookup. Phone calendar access is also planned. Until then, collect availability directly from the tenant. Person 3 owns the proposed one-hour matching operation and any new case fields (TBD).
+
 ## Required outputs
 - Working end-to-end demonstration from reported problem to partner-completed job and linked invoice
 - Generic **Partner Connector Specification**: services, eligibility, availability, job creation, acceptance, state updates, completed report / invoice, auth and errors

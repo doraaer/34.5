@@ -25,7 +25,11 @@ flowchart TD
 - Basic safety checks exist; emergency gas hazard routing is not part of pitch.
 
 ## State ownership
-**Backend:** reported, awaiting_partner, scheduled, in_progress, completed, needs_attention. **Partner:** requested, accepted, in_progress, completed, declined. Frontend displays only. LLM suggests tool actions, never writes status itself.
+**Backend:** reported, awaiting_partner, scheduled, in_progress, completed, needs_attention. **Partner:** received, accepted, in_progress, completed, rejected. Frontend displays only. LLM suggests tool actions, never writes status itself.
+
+## Planned availability matching
+
+After the local flow works, FastAPI can compare Google Calendar free/busy with provider windows and give DORA the earliest common one-hour appointment. The tenant approves the proposed time before dispatch. The provider receives the approved request and confirms it by accepting the slot. Phone calendar access is planned. Person 3 owns the proposal operation and new case fields (TBD).
 
 ## Async conversation
 Tenant authorizes a booking window. DORA can end call after sending the request, notify via UI/status when confirmed, and resume conversation if needed. No waiting on a live speech session for an external contractor.

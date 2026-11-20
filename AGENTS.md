@@ -13,6 +13,10 @@ One credible finished heating-repair workflow: tenant → DORA voice → stored 
 - Shared/frozen: `contracts/**`, `backend/main.py`, `requirements.txt`, `README.md`, `AGENTS.md`, `docs/architecture.md`, `.env.example`. Coordinate before editing.
 Never casually edit another owner's folder. If blocked, document the API issue, provide expected payloads and ask the owner.
 
+## Proposed dashboard ownership
+
+With Person 1's agreement, Person 4 would own `frontend/templates/partner.html` and `frontend/static/js/partner.js`. Person 1 owns these files until that agreement and keeps shared frontend assets.
+
 ## Task execution protocol
 1. Determine your PERSON number and branch. If unspecified, ask who assigned the task rather than editing random modules.
 2. Read your task IDs and acceptance criteria in docs/PLAN.md.
