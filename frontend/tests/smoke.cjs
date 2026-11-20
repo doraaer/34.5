@@ -23,7 +23,9 @@ const fs = require("node:fs");
     }));
     await page.locator("#open-dora").click();
     await page.locator("#report-fields:not([disabled])").waitFor();
+    await page.locator("#library").click();
     await waitText(page.locator("#home-context"), "Lena Demo");
+    await page.locator("#back-assistant").click();
     const description = "Browser smoke: cold living room radiators " + Date.now();
 
     await page.locator("#description").fill(description);
@@ -36,7 +38,7 @@ const fs = require("node:fs");
     await page.locator("#dispatch").click();
     await waitText(page.locator("#case .pill"), "Waiting for provider");
     assert.equal(await page.locator("#case .appointment").count(), 0);
-    await page.reload(); await page.locator("#open-dora").click();
+    await page.reload(); await page.locator("#open-dora").click(); await page.locator("#library").click();
     await waitText(page.locator("#case"), caseId);
     assert.equal(await page.locator("#case .appointment").count(), 0);
     const provider = await context.newPage();
@@ -84,7 +86,7 @@ const fs = require("node:fs");
     await rejectedCard.getByRole("button", {name:"Confirm rejection"}).click();
     await waitText(rejectedCard, "Rejected");
     await page.evaluate(id => localStorage.setItem("dora_case_id", id), rejected.case_id);
-    await page.reload(); await page.locator("#open-dora").click(); await waitText(page.locator("#case .pill"), "Needs attention");
+    await page.reload(); await page.locator("#open-dora").click(); await page.locator("#library").click(); await waitText(page.locator("#case .pill"), "Needs attention");
     assert.equal(await page.locator("#case .appointment").count(), 0);
     // Network errors must retain the last known case rather than clear it.
     await page.route("**/api/cases", route => route.abort());

@@ -5,6 +5,19 @@
   let windows = [], mutation = false, epoch = 0, caseSignature = "", listSignature = "";
   let slotsLoading = false, uncertainCreate = false, refreshing = false;
   const bookingFields = $("booking-fields"), reportFields = $("report-fields");
+  function showLibrary(open) {
+    $("requests").hidden = !open;
+    document.querySelector(".welcome").hidden = open;
+    $("library").setAttribute("aria-expanded", String(open));
+    window.scrollTo(0, 0);
+    (open ? $("library-title") : $("conversation").querySelector("h1")).focus({preventScroll:true});
+  }
+  $("library").onclick = () => showLibrary($("requests").hidden);
+  $("back-assistant").onclick = () => showLibrary(false);
+  $("urgent").onclick = event => {
+    const button = event.currentTarget;
+    button.setAttribute("aria-pressed", String(button.getAttribute("aria-pressed") !== "true"));
+  };
   function controls() {
     reportFields.disabled = !context || mutation || uncertainCreate;
     bookingFields.disabled = mutation || slotsLoading || !selected || selected.status !== "reported";
@@ -103,19 +116,20 @@
     D.feedback($("report-feedback"), "");
     try {
       const result = await D.api("/api/cases", { method: "POST", body: JSON.stringify({
-        description, priority: $("priority").value, tenant_id: context.tenant.tenant_id, unit_id: context.tenant.unit_id
+        description, priority: $("urgent").getAttribute("aria-pressed") === "true" ? "urgent" : "routine", tenant_id: context.tenant.tenant_id, unit_id: context.tenant.unit_id
       }) });
       if (!result.case_id) { const error = new Error("We couldn’t verify the saved request."); error.uncertain = true; throw error; }
       current = result.case_id; D.storageSet("dora_case_id", current);
       cases = [result, ...cases.filter(c => c.case_id !== current)];
       $("description").value = ""; $("booking-form").reset(); D.feedback($("booking-feedback"), "");
-      render(); D.feedback($("report-feedback"), "Request saved. Choose when you can be home, then send it to the provider.");
-      $("slot").focus();
+      render(); D.feedback($("booking-feedback"), "Request saved. Choose when you can be home, then send it to the provider.");
+      $("urgent").setAttribute("aria-pressed", "false");
+      showLibrary(true);
     } catch (error) {
       uncertainCreate = !!error.uncertain;
       D.feedback($("report-feedback"), error.message + (error.uncertain ? " The request may have been saved. Refresh and review your saved requests before submitting again." : ""), true);
     } finally {
-      mutation = false; epoch++; $("create").textContent = "Create maintenance request"; controls();
+      mutation = false; epoch++; $("create").textContent = "Send request"; controls();
     }
   });
   $("booking-form").addEventListener("submit", async event => {

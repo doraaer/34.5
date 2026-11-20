@@ -9,16 +9,32 @@
 </section>
 <div id="dora-app" hidden>
 <a class="skip" href="#main">Skip to content</a>
-<header class="topbar"><a class="brand" href="/tenant">DORA</a><nav><a href="#requests">Your requests</a></nav></header>
+<header class="topbar"><a class="brand" href="/tenant">DORA</a><nav><button id="library" aria-label="Saved requests" title="Saved requests" aria-controls="requests" aria-expanded="false"><span aria-hidden="true"></span></button></nav></header>
 <main id="main" class="shell"><section class="welcome" aria-label="DORA home assistant">
-<div id="conversation" hidden><div class="pearl" aria-hidden="true"></div><h1 tabindex="-1">What’s wrong with your heating?</h1><button type="button" disabled>Talk to DORA</button><p class="hint">Voice is offline. Write to DORA below.</p><div id="elevenlabs-agent-container"></div><form id="report-form"><fieldset id="report-fields" disabled><legend class="sr-only">Report a heating issue</legend>
-<label class="sr-only" for="description">What’s wrong with your heating?</label><textarea id="description" rows="1" minlength="3" maxlength="3000" required placeholder="Describe your heating issue…"></textarea><p class="hint">Tell us what you noticed and when it started. Your home details are already included.</p>
-<details class="urgency"><summary>Set urgency</summary><label for="priority">How urgent is it?</label><select id="priority"><option value="routine">Routine maintenance</option><option value="urgent">Urgent heating issue</option></select></details><button class="primary" id="create" type="submit">Send request</button></fieldset></form>
-<p id="report-feedback" class="feedback" role="status"></p><p class="hint">For an immediate danger, stop this routine booking process and contact local emergency services.</p>
+<div id="conversation" hidden>
+  <div class="assistant-stage">
+    <div class="voice-sculpture" aria-hidden="true"><i></i><i></i><i></i></div>
+    <h1 tabindex="-1">How can I help you?</h1>
+    <div id="elevenlabs-agent-container"></div>
+    <p class="voice-state">Voice offline</p>
+    <a class="write-link" href="#description">Write instead <span aria-hidden="true">↓</span></a>
+  </div>
+  <form id="report-form"><fieldset id="report-fields" disabled>
+    <legend class="sr-only">Report a heating issue</legend>
+    <label for="description">Describe your problem</label>
+    <textarea id="description" rows="2" minlength="3" maxlength="3000" required placeholder="My radiators have been cold since…"></textarea>
+    <div class="composer-actions">
+      <button type="button" id="urgent" aria-pressed="false">Mark urgent</button>
+      <button class="primary" id="create" type="submit">Send request</button>
+    </div>
+  </fieldset></form>
+  <p id="report-feedback" class="feedback" role="status"></p>
 </div></section>
-<section id="requests" aria-label="Your requests"><section class="home-strip" aria-label="Your property"><div><span class="caption">Your home</span><p id="home-context">Loading your home details…</p></div><div><span class="caption">Maintenance partner</span><p id="partner-context">Loading…</p></div></section>
+<section id="requests" aria-label="Saved requests" hidden>
+<button type="button" id="back-assistant" class="text-button">‹ Back to DORA</button>
+<h1 id="library-title" tabindex="-1">Saved requests</h1><section class="home-strip" aria-label="Your property"><div><span class="caption">Your home</span><p id="home-context">Loading your home details…</p></div><div><span class="caption">Maintenance partner</span><p id="partner-context">Loading…</p></div></section>
 <div class="sync-row"><p id="sync-status" role="status">Connecting…</p><button id="refresh" class="text-button" type="button">Refresh</button></div>
-<div class="workspace"><section class="panel"><details class="request-history"><summary>Your saved requests <span id="request-count"></span></summary><div id="request-list"><p class="hint">Loading saved requests…</p></div></details></section>
+<div class="workspace"><section class="panel"><div class="request-history"><h2>History <span id="request-count"></span></h2><div id="request-list"><p class="hint">Loading saved requests…</p></div></div></section>
 <section class="panel" aria-labelledby="tracking-heading"><div class="section-heading"><div><h2 id="tracking-heading">Your request</h2></div></div>
 <div id="case" aria-live="polite"><div class="empty-state"><span class="empty-symbol" aria-hidden="true">◎</span><h3>No request selected</h3><p>Once you report an issue, its progress and appointment will appear here.</p></div></div>
 <section id="booking" class="booking" hidden aria-labelledby="booking-heading"><h3 id="booking-heading">When can someone visit?</h3><p class="hint">Choose a window when you can be home. These are the fictional provider’s offered windows, not confirmed appointments.</p><div class="calendar-note"><strong>No calendar connected</strong><p>Google and phone calendar connections are not available yet. Choose your availability below.</p></div>
