@@ -12,7 +12,7 @@ def services():
 
 @router.get("/availability")
 def availability():
-    return db.fixture("partner.json")["availability"]
+    return service.available_windows()
 
 @router.get("/jobs")
 def jobs():

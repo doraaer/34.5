@@ -1,0 +1,115 @@
+{
+  "_comment": "DORA client tools. Shared contract between the ElevenLabs agent config (Claude) and the browser implementation in agent/web/ (Codex). Tools run in the browser via @elevenlabs/client clientTools and call the local FastAPI (contracts/api-contract.md). Every tool returns a JSON string with ok=true|false. Do not rename tools or fields without updating both sides.",
+  "tools": [
+    {
+      "type": "client",
+      "name": "get_tenant_context",
+      "description": "Load the caller's tenant, unit, building (address, heating type), the contracted SHK heating partner and the partner's offered appointment windows from Centrix. Call this once at the start of the conversation before asking anything the record already contains.",
+      "expects_response": true,
+      "response_timeout_secs": 15,
+      "parameters": { "type": "object", "properties": {}, "required": [] },
+      "returns": {
+        "ok": true,
+        "tenant_name": "Lena Demo",
+        "unit_id": "UNIT-102",
+        "building_address": "Musterstrasse 12, Düsseldorf, Germany",
+        "heating_type": "gas central heating",
+        "partner_name": "Demo SHK Services (Fictional)",
+        "windows": [
+          { "window_id": "W1", "label": "Monday 23 November, 14:00 to 15:00", "start": "2026-11-23T14:00:00+01:00", "end": "2026-11-23T15:00:00+01:00" },
+          { "window_id": "W2", "label": "Monday 23 November, 15:00 to 16:00", "start": "2026-11-23T15:00:00+01:00", "end": "2026-11-23T16:00:00+01:00" }
+        ],
+        "_windows_note": "1-hour appointment slots carved from the partner's availability windows, earliest first.",
+        "open_case": { "case_id": "CASE-1234ABCD", "status": "awaiting_partner" }
+      }
+    },
+    {
+      "type": "client",
+      "name": "create_maintenance_case",
+      "description": "Create a heating maintenance case in Centrix for the caller's unit. Call only after you understand the symptom (which rooms/radiators, since when). The created case becomes the current case for all later tools.",
+      "expects_response": true,
+      "response_timeout_secs": 15,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "description": { "type": "string", "description": "Short factual summary in the tenant's words: affected rooms or radiators, since when, hot water yes/no. No diagnosis." },
+          "priority": { "type": "string", "enum": ["routine", "urgent"], "description": "urgent only if the whole flat is cold or vulnerable people are affected; otherwise routine." }
+        },
+        "required": ["description", "priority"]
+      },
+      "returns": { "ok": true, "case_id": "CASE-1234ABCD", "status": "reported" }
+    },
+    {
+      "type": "client",
+      "name": "save_availability_and_consent",
+      "description": "Store which partner windows the tenant is available in, plus the tenant's explicit booking authorization and consent to share address and issue with the SHK partner. Only ids returned by get_tenant_context (W1...) or propose_times_from_calendar (P1...) are valid. Both booleans must reflect what the tenant actually said.",
+      "expects_response": true,
+      "response_timeout_secs": 15,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "window_ids": { "type": "array", "items": { "type": "string" }, "description": "One or more ids the tenant agreed to: window_id values from get_tenant_context (e.g. \"W1\") or proposal_id values from propose_times_from_calendar (e.g. \"P1\")." },
+          "booking_authorized": { "type": "boolean", "description": "true only if the tenant said yes to booking within these windows." },
+          "data_sharing_consent": { "type": "boolean", "description": "true only if the tenant agreed to share address and issue details with the heating company." },
+          "add_to_calendar": { "type": "boolean", "description": "Optional. true only if the tenant said yes to adding the appointment to their calendar automatically once the company confirms it." }
+        },
+        "required": ["window_ids", "booking_authorized", "data_sharing_consent"]
+      },
+      "returns": { "ok": true, "case_id": "CASE-1234ABCD", "status": "reported", "authorized_windows": ["Monday 23 November, 14:00 to 15:00"], "calendar_auto_add": true },
+      "_auto_add_note": "If calendar_auto_add is true, the page watches the case after dispatch and adds the appointment the moment the partner accepts (backend /calendar-event, else an .ics link)."
+    },
+    {
+      "type": "client",
+      "name": "propose_times_from_calendar",
+      "description": "Only after the tenant agreed that you may check their calendar: read free times from the tenant's connected calendar that also fit the heating company's windows. Returns proposals with proposal_id values (P1, P2...) to offer the tenant. If ok is false or proposals is empty, offer the windows from get_tenant_context instead.",
+      "expects_response": true,
+      "response_timeout_secs": 20,
+      "parameters": { "type": "object", "properties": {}, "required": [] },
+      "returns": {
+        "ok": true,
+        "source": "google_calendar",
+        "proposals": [
+          { "proposal_id": "P1", "label": "Monday 23 November, 15:00 to 16:00", "start": "2026-11-23T15:00:00+01:00", "end": "2026-11-23T16:00:00+01:00" }
+        ]
+      },
+      "backend": "POST /api/cases/{case_id}/calendar-proposal (proposed in agent/CALENDAR-CONTRACT-PROPOSAL.md; 404/409 -> ok:false error calendar_unavailable)"
+    },
+    {
+      "type": "client",
+      "name": "dispatch_to_partner",
+      "description": "Send the current case to the contracted SHK partner. This is a REQUEST, not a booking: the result status is awaiting_partner until the partner accepts a slot.",
+      "expects_response": true,
+      "response_timeout_secs": 20,
+      "parameters": { "type": "object", "properties": {}, "required": [] },
+      "returns": { "ok": true, "case_id": "CASE-1234ABCD", "status": "awaiting_partner", "confirmed": false }
+    },
+    {
+      "type": "client",
+      "name": "add_appointment_to_calendar",
+      "description": "Only when get_case_status shows the appointment is confirmed (status scheduled) and the tenant said yes to adding it: put the confirmed appointment in the tenant's calendar. method 'calendar' means it was added directly; method 'ics_download' means an 'Add to calendar' button is now shown on the tenant's page.",
+      "expects_response": true,
+      "response_timeout_secs": 20,
+      "parameters": { "type": "object", "properties": {}, "required": [] },
+      "returns": { "ok": true, "method": "calendar", "provider": "google_calendar", "appointment": "Monday 23 November, 15:00 to 16:00" },
+      "backend": "POST /api/cases/{case_id}/calendar-event (proposed in agent/CALENDAR-CONTRACT-PROPOSAL.md); if unavailable, the browser offers an .ics file instead"
+    },
+    {
+      "type": "client",
+      "name": "get_case_status",
+      "description": "Read the current case status from Centrix. Only claim an appointment is booked when status is scheduled and appointment is present.",
+      "expects_response": true,
+      "response_timeout_secs": 15,
+      "parameters": { "type": "object", "properties": {}, "required": [] },
+      "returns": { "ok": true, "case_id": "CASE-1234ABCD", "status": "scheduled", "appointment": "Monday 23 November, 15:00 to 16:00", "service_report": null }
+    }
+  ],
+  "error_return": {
+    "ok": false,
+    "error": "Short machine-readable code, e.g. backend_unreachable, not_found, invalid_state, consent_missing, unknown_window, no_current_case, calendar_unavailable, not_confirmed",
+    "message": "One sentence the agent can relay to the tenant. Never implies success."
+  },
+  "browser_state": {
+    "current_case_localstorage_key": "dora_case_id",
+    "note": "Same key the tenant page (frontend/static/js/tenant.js) already uses, so voice and page show the same case."
+  }
+}

@@ -83,3 +83,38 @@ def test_completion_retry_preserves_original_invoice(client):
     case = client.get(case_url).json()
     assert case["status"] == "completed"
     assert case["invoice"] == COMPLETION["invoice"]
+
+
+def test_rejection_requires_reason_and_preserves_it_on_job(client):
+    case_url, job_url = dispatch_job(client)
+    reject_url = f"{job_url}/reject"
+    assert client.post(reject_url, json={"reason": "  "}).status_code == 422
+    assert client.get(case_url).json()["status"] == "awaiting_partner"
+
+    reason = "Technician unavailable"
+    response = client.post(reject_url, json={"reason": reason})
+    assert response.status_code == 200
+    job, = client.get("/partner/jobs").json()
+    assert job["status"] == "rejected"
+    assert job["rejection_reason"] == reason
+    case = client.get(case_url).json()
+    assert case["status"] == "needs_attention"
+    assert case["appointment"] is None
+    assert client.post(f"{job_url}/accept", json={"slot": OFFERED}).status_code == 409
+
+
+def test_single_technician_reserves_only_the_accepted_interval(client):
+    initial_windows = client.get("/partner/availability").json()
+    _, first_job = dispatch_job(client)
+    second_case, second_job = dispatch_job(client)
+    booked = {"start": "2026-11-23T15:00:00+01:00", "end": "2026-11-23T16:00:00+01:00"}
+    before = {"start": OFFERED["start"], "end": booked["start"]}
+    after = {"start": booked["end"], "end": OFFERED["end"]}
+    assert client.get("/partner/availability").json() == initial_windows
+    assert client.post(f"{first_job}/accept", json={"slot": booked}).status_code == 200
+    overlap = {"start": "2026-11-23T15:30:00+01:00", "end": OFFERED["end"]}
+    assert client.post(f"{second_job}/accept", json={"slot": overlap}).status_code == 409
+    assert client.get(second_case).json()["status"] == "awaiting_partner"
+    assert client.get("/partner/availability").json() == [before, after, *initial_windows[1:]]
+    assert client.post(f"{second_job}/accept", json={"slot": after}).status_code == 200
+    assert client.get("/partner/availability").json() == [before, *initial_windows[1:]]

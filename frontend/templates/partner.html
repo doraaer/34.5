@@ -1,1 +1,35 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DORA · SHK provider</title><link rel="stylesheet" href="/static/css/style.css"></head><body><header><a class="logo" href="/tenant">DORA <span>· Provider</span></a><nav><a href="/tenant">Tenant</a><a class="active" href="/partner">Partner (demo)</a><a href="/centrix">Centrix (demo)</a></nav></header><main><section class="hero"><p class="eyebrow">FICTIONAL SHK PARTNER SYSTEM</p><h1>SHK work orders</h1><p>Received requests are not automatically accepted. Confirm an offered slot, then report completion.</p></section><section class="panel"><div class="split"><h2>Incoming jobs</h2><button class="secondary" id="refresh">Refresh</button></div><div id="jobs">Loading…</div><p id="info" class="muted"></p></section></main><script src="/static/js/common.js"></script><script src="/static/js/partner.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DORA · Provider work orders</title>
+  <link rel="stylesheet" href="/static/css/partner.css">
+  <script defer src="/static/js/experience.js"></script>
+  <script defer src="/static/js/partner.js"></script>
+</head>
+<body>
+  <header>
+    <div class="brand"><strong>DORA</strong><span>Provider workspace</span></div>
+    <nav aria-label="Demo views"><a href="/tenant">Tenant</a><a href="/partner" aria-current="page">Provider</a><a href="/centrix">Centrix</a></nav>
+  </header>
+  <main>
+    <div class="heading"><h1>Service desk</h1><button id="refresh" type="button">Refresh</button></div>
+    <p id="info" role="status"></p>
+    <div class="workspace">
+      <section class="inbox" aria-labelledby="orders-title">
+        <h2 id="orders-title">Work orders</h2>
+        <div id="jobs">Loading work orders…</div>
+      </section>
+      <section class="planner" aria-labelledby="calendar-title">
+        <div class="calendar-head">
+          <div><h2 id="calendar-title">Technician calendar</h2><p id="week-range"></p></div>
+          <div class="week-nav"><button id="previous-week" aria-label="Previous week">‹</button><button id="next-week" aria-label="Next week">›</button></div>
+        </div>
+        <div class="legend"><span class="demo-key">Demo visit</span><span class="proposal-key">Proposed</span><span class="booked-key">Booked</span></div>
+        <div class="calendar-scroll" tabindex="0" aria-label="Weekly technician schedule, Berlin time"><div id="calendar"></div></div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

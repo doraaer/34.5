@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DORA voice demo</title>
+  <style>
+    body { max-width: 44rem; margin: 2rem auto; padding: 0 1rem; font: 1rem/1.5 system-ui, sans-serif; }
+    button { padding: .5rem 1rem; font: inherit; }
+    [data-voice-error] { color: #a12619; }
+    li { overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+<main>
+<h1>DORA voice demo</h1>
+<div id="elevenlabs-agent-container" data-agent-id="">
+  <button type="button" data-talk>Start talking</button>
+  <p role="status" data-voice-status>Voice is ready to start.</p>
+  <p role="alert" data-voice-error></p>
+  <p data-calendar hidden><a data-calendar-link download>📅 Add appointment to your calendar</a></p>
+  <h3>Transcript</h3>
+  <ul data-transcript></ul>
+  <h3>Tool events</h3>
+  <ul data-tool-events></ul>
+</div>
+<script type="module">
+  const panel = document.querySelector("#elevenlabs-agent-container");
+  const button = panel.querySelector("[data-talk]");
+  const statusLine = panel.querySelector("[data-voice-status]");
+  const errorLine = panel.querySelector("[data-voice-error]");
+  let voice;
+  let connected = false;
+
+  function append(selector, text, limit) {
+    const list = panel.querySelector(selector);
+    const item = document.createElement("li");
+    item.textContent = text;
+    list.append(item);
+    if (list.children.length > limit) list.firstElementChild.remove();
+  }
+
+  const options = {
+    agentId: panel.dataset.agentId,
+    onStatus: ({ status, mode }) => {
+      connected = status === "connected";
+      button.textContent = connected ? "Stop talking" : "Start talking";
+      statusLine.textContent = {
+        connecting: "Connecting to DORA...",
+        connected: mode === "speaking" ? "DORA is speaking." : "Connected to DORA.",
+        disconnecting: "Ending the conversation...",
+        disconnected: "Voice session ended.",
+      }[status] ?? status;
+    },
+    onMessage: ({ message, role, source }) => {
+      const speaker = (role ?? source) === "user" ? "You" : "DORA";
+      append("[data-transcript]", `${speaker}: ${message}`, 12);
+    },
+    onToolEvent: async ({ name, result }) => {
+      append("[data-tool-events]", `${name}: ${result.ok ? (result.status ?? "OK") : result.error}`, 12);
+      if (typeof refresh === "function") {
+        // The current tenant.js stores its active case in a global lexical binding.
+        if (name === "create_maintenance_case" && result.ok && typeof current !== "undefined") {
+          current = result.case_id;
+        }
+        await refresh();
+      }
+    },
+    onError: message => { errorLine.textContent = message; },
+    onCalendarAdded: ({ label }) => {
+      const box = panel.querySelector("[data-calendar]");
+      box.textContent = `✅ Added to your calendar: ${label}`;
+      box.hidden = false;
+    },
+    onCalendarFile: ({ url, filename, label }) => {
+      const link = panel.querySelector("[data-calendar-link]");
+      link.href = url;
+      link.download = filename;
+      link.textContent = `📅 Add to your calendar: ${label}`;
+      panel.querySelector("[data-calendar]").hidden = false;
+    },
+  };
+
+  button.addEventListener("click", async () => {
+    button.disabled = true;
+    errorLine.textContent = "";
+    try {
+      if (!voice) {
+        statusLine.textContent = "Loading DORA voice...";
+        const { createDoraVoice } = await import("/static/js/dora-voice.js");
+        voice = createDoraVoice(options);
+        statusLine.textContent = "Voice is ready to start.";
+      }
+      if (connected) await voice.stop();
+      else await voice.start();
+    } catch {
+      errorLine.textContent = "DORA voice couldn't load. Please try again or use the text form if available.";
+      statusLine.textContent = "Voice is unavailable.";
+    } finally {
+      button.disabled = false;
+    }
+  });
+</script>
+</main>
+</body>
+</html>
