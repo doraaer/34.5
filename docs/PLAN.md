@@ -5,6 +5,10 @@
 **P1 (after P0):** alternative booking slot, polished timeline, post-call notification, developer-safe failure/retry.
 **P2 (only if time):** preventive maintenance due-date trigger, actual telephone integration, SMS/email adapters, live calendar OAuth, multi-provider support.
 
+## Calendar and dashboard follow-up
+
+After the local core flow works, Person 3 can pursue Google free/busy lookup and one-hour matching. Phone calendar connection is planned. Person 3 owns the appointment-proposal operation and new case fields (TBD). Person 1 would add the tenant connect control and Person 2 would ask the tenant to approve the proposed hour. Person 4 would continue to validate the provider slot. Transfer of the partner page and its JS to Person 4 is proposed pending Person 1's agreement.
+
 ## Contract freeze (before parallel work)
 Agree on one tenant, building, SHK partner, available appointment slots, case/job states, request schemas and API endpoints. Freeze contracts/*. Never independently rename fields. Work in feature branches.
 
