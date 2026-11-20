@@ -227,7 +227,7 @@ export function createDoraVoice({ agentId, apiBase = "", onStatus, onMessage, on
         // 404 (endpoint not deployed yet / no case) and 409 (calendar not connected) mean:
         // fall back to the partner windows. Anything else is reported the same way.
         throw new ToolError("calendar_unavailable",
-          "I can't read your calendar right now, so let me offer the available times instead.");
+          "I wasn't able to read your calendar. Say exactly that to the tenant, then offer the next available slots.");
       }
       const proposals = new Map((data.proposals ?? []).slice(0, 3).map(({ start, end }, index) => [
         `P${index + 1}`, { start, end },
