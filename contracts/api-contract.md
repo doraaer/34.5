@@ -27,8 +27,12 @@ Base: local `http://127.0.0.1:8000`; JSON camel/snake policy: **snake_case**.
 
 Google and phone calendar connection follow the local core flow. Appointment-proposal operation and any new case fields are TBD (Person 3).
 
-## Production interface to implement (not yet implied working)
-- `POST /internal/partner-events` with authenticated partner event, event ID, case ID, job ID, `partner.accepted`, `partner.started`, `partner.completed`, or `partner.rejected`; idempotent.
+## Production interface (partner events implemented; the rest still to do)
+- `POST /internal/partner-events` — **implemented** (Person 3). Header `X-DORA-Token: <DORA_INTERNAL_TOKEN>` is required; a missing or wrong token returns `403`, and every request is refused if the token is not configured. Body:
+  ```json
+  {"event_id":"JOB-AB12CD34:partner.completed","type":"partner.completed","case_id":"CASE-1A2B3C4D","partner_job_id":"JOB-AB12CD34","payload":{}}
+  ```
+  `type` is one of `partner.accepted`, `partner.started`, `partner.completed`, `partner.rejected`. `event_id` is optional and defaults to `<partner_job_id>:<type>`. Payloads: accepted `{"slot":{start,end}}`; completed `{"service_report":{...},"invoice":{...}}`; rejected `{"reason":"..."}`. Returns the updated case. A replayed `event_id` returns the current case unchanged (idempotent). Unknown case `404`, invalid transition or slot outside authorized windows `409`, bad completion `400`. This updates the Centrix case only; the partner job record is updated by the partner service.
 - `/agent/*` tool endpoints require secret/signature verified for external voice agent.
 - n8n should send actual HTTP partner requests, not just draw workflow diagrams.
 
