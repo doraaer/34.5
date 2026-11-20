@@ -1,7 +1,45 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DORA · Tenant</title><link rel="stylesheet" href="/static/css/style.css"></head><body>
-<header><a class="logo" href="/tenant">DORA <span>· Property Assistant</span></a><nav><a class="active" href="/tenant">Tenant</a><a href="/partner">Partner (demo)</a><a href="/centrix">Centrix (demo)</a></nav></header>
-<main><section class="hero"><p class="eyebrow">RESIDENT EXPERIENCE</p><h1>Home maintenance, handled.</h1><p>Tell DORA what's happening. We coordinate with your building's contracted heating company.</p></section>
-<div class="grid"><section class="panel"><h2>Talk to DORA</h2><div class="voice"><div class="orb">◉</div><p><strong>ElevenLabs voice integration pending</strong></p><p>Person 2 will configure ElevenLabs here. Until then, use the functional text fallback below.</p><div id="elevenlabs-agent-container"></div></div><label for="description">Tell DORA your issue (text fallback)</label><textarea id="description" rows="3">My apartment isn't heating properly. The radiators are cold.</textarea><button id="create">Report heating issue</button><p id="info" class="muted"></p></section>
-<section class="panel"><h2>Your maintenance case</h2><div id="case" class="muted">No case created yet.</div><hr><h3>Availability &amp; booking consent</h3><p class="muted">Demo uses fictional availability; no real calendar is accessed.</p><label>Available time <select id="slot"><option value="0">Mon 23 Nov, 14:00–17:00</option><option value="1">Tue 24 Nov, 09:00–12:00</option></select></label><label class="check"><input type="checkbox" id="consent"> I authorize booking in this window and sharing necessary address and issue details with the contracted SHK company.</label><button id="dispatch">Authorize &amp; send to provider</button></section></div>
-<p class="muted small">Demo only: fictional resident, SHK partner and Centrix. Provider—not DORA—diagnoses and repairs the fault.</p></main>
-<script src="/static/js/common.js"></script><script src="/static/js/tenant.js"></script></body></html>
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DORA · Your home, looked after</title><link rel="stylesheet" href="/static/css/experience.css"><script defer src="/static/js/experience.js"></script><script defer src="/static/js/tenant.js"></script><link rel="stylesheet" href="/static/css/resident.css"></head>
+<body>
+<section id="dora-landing" aria-label="DORA home assistant">
+  <div class="lava" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+  <button id="open-dora" type="button" aria-label="Open DORA" aria-expanded="false" aria-controls="dora-app">
+    <img src="/static/images/dora-bubble.jpg" width="1254" height="1254" alt="" fetchpriority="high">
+  </button>
+</section>
+<div id="dora-app" hidden>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar"><a class="brand" href="/tenant">DORA</a><nav><button id="library" aria-label="Saved requests" title="Saved requests" aria-controls="requests" aria-expanded="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path class="archive-lid" d="M3 5.5 12 3l9 2.5v4L12 12 3 9.5z"/><path d="M5 10.2V18l7 3 7-3v-7.8M12 12v9"/></svg></button></nav></header>
+<main id="main" class="shell"><section class="welcome" aria-label="DORA home assistant">
+<div id="conversation" hidden>
+  <div class="assistant-stage">
+    <div class="voice-sculpture" aria-hidden="true"><i></i><i></i><i></i></div>
+    <h1 tabindex="-1">How can I help you?</h1>
+    <div id="elevenlabs-agent-container"></div>
+    
+    <a class="write-link" href="#description"><span class="sr-only">Write instead</span><span aria-hidden="true">⌄</span></a>
+  </div>
+  <section class="composer-stage" aria-label="Write a request"><form id="report-form"><fieldset id="report-fields" disabled>
+    <legend class="sr-only">Report a heating issue</legend>
+    <label for="description">Describe your problem</label>
+    <textarea id="description" rows="2" minlength="3" maxlength="3000" required placeholder="My radiators have been cold since yesterday."></textarea>
+    <div class="composer-actions">
+      <button type="button" id="urgent" aria-pressed="false">Mark urgent</button>
+      <button class="primary" id="create" type="submit">Send request</button>
+    </div>
+  </fieldset></form>
+  <p id="report-feedback" class="feedback" role="status"></p>
+</section></div></section>
+<section id="requests" aria-label="Saved requests" hidden>
+<button type="button" id="back-assistant" class="text-button">‹ Back to DORA</button>
+<h1 id="library-title" tabindex="-1">Saved requests</h1><section class="home-strip" aria-label="Your property"><div><span class="caption">Your home</span><p id="home-context">Loading your home details…</p></div><div><span class="caption">Maintenance partner</span><p id="partner-context">Loading…</p></div></section>
+<div class="sync-row"><p id="sync-status" role="status">Connecting…</p><button id="refresh" class="text-button" type="button">Refresh</button></div>
+<div class="workspace"><section class="panel"><div class="request-history"><h2>History <span id="request-count"></span></h2><div id="request-list"><p class="hint">Loading saved requests…</p></div></div></section>
+<section class="panel" aria-labelledby="tracking-heading"><div class="section-heading"><div><h2 id="tracking-heading">Your request</h2></div></div>
+<div id="case" aria-live="polite"><div class="empty-state"><span class="empty-symbol" aria-hidden="true">◎</span><h3>No request selected</h3><p>Once you report an issue, its progress and appointment will appear here.</p></div></div>
+<section id="booking" class="booking" hidden aria-labelledby="booking-heading"><h3 id="booking-heading">When can someone visit?</h3><p class="hint">Choose a window when you can be home. These are the fictional provider’s offered windows, not confirmed appointments.</p><div class="calendar-note"><strong>No calendar connected</strong><p>Google and phone calendar connections are not available yet. Choose your availability below.</p></div>
+<form id="booking-form"><fieldset id="booking-fields"><legend class="sr-only">Availability and consent</legend><label for="slot">Your available window · Berlin time</label><select id="slot" required><option value="">Loading available windows…</option></select><button id="retry-slots" class="text-button" type="button" hidden>Reload available windows</button><p id="slot-feedback" class="hint" role="status"></p>
+<label class="check"><input type="checkbox" id="booking-consent" required><span>I authorize a visit within the selected window.</span></label><label class="check"><input type="checkbox" id="sharing-consent" required><span>I agree to share my address, issue and selected window with the contracted maintenance company.</span></label><button id="dispatch" type="submit" class="primary">Send request to provider</button></fieldset></form>
+<p class="hint">The provider must accept before your appointment is confirmed. You can close this page and check back later.</p></section><p id="booking-feedback" class="feedback" role="status"></p></section></div>
+</section><footer><a href="/partner">Provider demo</a> <a href="/centrix">Centrix demo</a> <span>Fictional resident, provider and Centrix records. The technician diagnoses and repairs the issue.</span></footer></main></div></body></html>
+
