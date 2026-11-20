@@ -12,14 +12,14 @@ EXPECTED_TOOLS = {
     "get_tenant_context": set(),
     "create_maintenance_case": {"description", "priority"},
     "save_availability_and_consent": {
-        "window_ids", "booking_authorized", "data_sharing_consent",
+        "window_ids", "booking_authorized", "data_sharing_consent", "add_to_calendar",
     },
     "propose_times_from_calendar": set(),
     "add_appointment_to_calendar": set(),
     "dispatch_to_partner": set(),
     "get_case_status": set(),
 }
-OPTIONAL_PARAMS = {"save_availability_and_consent": {"add_to_calendar"}}
+OPTIONAL_PARAMS = {}
 JSON_HEADERS = {"Content-Type": "application/json"}
 
 

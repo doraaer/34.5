@@ -51,9 +51,9 @@
           "window_ids": { "type": "array", "items": { "type": "string" }, "description": "One or more ids the tenant agreed to: window_id values from get_tenant_context (e.g. \"W1\") or proposal_id values from propose_times_from_calendar (e.g. \"P1\")." },
           "booking_authorized": { "type": "boolean", "description": "true only if the tenant said yes to booking within these windows." },
           "data_sharing_consent": { "type": "boolean", "description": "true only if the tenant agreed to share address and issue details with the heating company." },
-          "add_to_calendar": { "type": "boolean", "description": "Optional. true only if the tenant said yes to adding the appointment to their calendar automatically once the company confirms it." }
+          "add_to_calendar": { "type": "boolean", "description": "The tenant's answer to: 'Should I put it in your calendar automatically once they confirm?' You must have asked this. true only if they said yes." }
         },
-        "required": ["window_ids", "booking_authorized", "data_sharing_consent"]
+        "required": ["window_ids", "booking_authorized", "data_sharing_consent", "add_to_calendar"]
       },
       "returns": { "ok": true, "case_id": "CASE-1234ABCD", "status": "reported", "authorized_windows": ["Monday 23 November, 14:00 to 15:00"], "calendar_auto_add": true },
       "_auto_add_note": "If calendar_auto_add is true, the page watches the case after dispatch and adds the appointment the moment the partner accepts (backend /calendar-event, else an .ics link)."
@@ -105,7 +105,7 @@
   ],
   "error_return": {
     "ok": false,
-    "error": "Short machine-readable code, e.g. backend_unreachable, not_found, invalid_state, consent_missing, unknown_window, no_current_case, calendar_unavailable, not_confirmed",
+    "error": "Short machine-readable code, e.g. backend_unreachable, not_found, invalid_state, consent_missing, unknown_window, no_current_case, calendar_unavailable, not_confirmed, calendar_question_missing",
     "message": "One sentence the agent can relay to the tenant. Never implies success."
   },
   "browser_state": {
