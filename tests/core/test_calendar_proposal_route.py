@@ -1,4 +1,4 @@
-"""Route tests on a standalone app: the calendar router is not registered in main.py yet."""
+"""Route tests on a minimal app with only the calendar router (clock and source overridable)."""
 from datetime import datetime
 from pathlib import Path
 
@@ -46,8 +46,8 @@ def test_proposals_from_fake_calendar(app, case_id):
     assert r.status_code == 200
     assert r.json() == {"source": "fake_calendar", "proposals": [
         {"start": "2026-11-23T15:00:00+01:00", "end": "2026-11-23T16:00:00+01:00"},
-        {"start": "2026-11-24T09:30:00+01:00", "end": "2026-11-24T10:30:00+01:00"},
-        {"start": "2026-11-24T10:30:00+01:00", "end": "2026-11-24T11:30:00+01:00"}]}
+        {"start": "2026-11-24T10:00:00+01:00", "end": "2026-11-24T11:00:00+01:00"},
+        {"start": "2026-11-24T11:00:00+01:00", "end": "2026-11-24T12:00:00+01:00"}]}
 
 
 def test_proposals_lie_inside_partner_windows(app, case_id):
@@ -115,3 +115,11 @@ def test_invalid_duration_is_422(app, case_id):
     use_source(app, lambda: FakeBusyTimeSource([]))
     r = TestClient(app).post(f"/api/cases/{case_id}/calendar-proposal", json={"duration_minutes": 5})
     assert r.status_code == 422
+
+
+def test_route_is_registered_in_main_app(client, monkeypatch):
+    monkeypatch.delenv("DORA_CALENDAR_PROVIDER", raising=False)
+    assert client.post("/api/cases/CASE-NOPE/calendar-proposal").status_code == 404
+    case = client.post("/api/cases", json={"description": "Radiators not heating", "priority": "routine"}).json()
+    r = client.post(f"/api/cases/{case['case_id']}/calendar-proposal", json={})
+    assert r.status_code == 409 and r.json() == {"detail": "calendar not connected"}

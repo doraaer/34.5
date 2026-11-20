@@ -39,12 +39,12 @@ def test_window_shorter_than_an_hour_is_skipped():
 
 def test_overlapping_busy_blocks():
     busy = [iv("14:00", "15:30"), iv("15:00", "15:45"), iv("14:30", "15:10")]
-    assert hm(earliest_free_slot([iv("14:00", "17:00")], busy)) == ("15:45", "16:45")
+    assert hm(earliest_free_slot([iv("14:00", "17:00")], busy)) == ("16:00", "17:00")
 
 
 def test_busy_spanning_window_start():
     busy = [iv("12:00", "14:30")]
-    assert hm(earliest_free_slot([iv("14:00", "17:00")], busy)) == ("14:30", "15:30")
+    assert hm(earliest_free_slot([iv("14:00", "17:00")], busy)) == ("15:00", "16:00")
 
 
 def test_busy_spanning_window_end_leaves_too_little_time():
@@ -63,8 +63,18 @@ def test_fully_busy_returns_none():
     assert earliest_free_slot([iv("14:00", "17:00")], [iv("08:00", "20:00")]) is None
 
 
-def test_odd_busy_end_rounds_up_to_quarter_hour():
-    assert hm(earliest_free_slot([iv("14:00", "17:00")], [iv("14:00", "14:07")])) == ("14:15", "15:15")
+def test_odd_busy_end_rounds_up_to_full_hour():
+    assert hm(earliest_free_slot([iv("14:00", "17:00")], [iv("14:00", "14:07")])) == ("15:00", "16:00")
+
+
+def test_window_not_on_the_hour_starts_at_next_full_hour():
+    assert hm(earliest_free_slot([iv("14:30", "16:00")], [])) == ("15:00", "16:00")
+    assert earliest_free_slot([iv("14:30", "15:45")], []) is None
+
+
+def test_custom_step_still_possible():
+    slot = find_free_slots([iv("14:00", "17:00")], [iv("14:00", "14:07")], step_minutes=15)[0]
+    assert hm(slot) == ("14:15", "15:15")
 
 
 def test_up_to_three_non_overlapping_slots_earliest_first():
@@ -84,7 +94,7 @@ def test_other_offsets_are_converted_to_berlin():
 
 def test_not_before_skips_past_time():
     now = datetime(2026, 11, 23, 14, 20, tzinfo=timezone(timedelta(hours=1)))
-    assert hm(earliest_free_slot([iv("14:00", "17:00")], [], not_before=now)) == ("14:30", "15:30")
+    assert hm(earliest_free_slot([iv("14:00", "17:00")], [], not_before=now)) == ("15:00", "16:00")
 
 
 def test_dst_change_day_keeps_berlin_offsets():

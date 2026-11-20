@@ -4,7 +4,7 @@ Read-only: proposes up to 3 free one-hour slots inside the partner windows and t
 tenant's free time. It does not change the case, authorize a booking or contact the
 partner. The tenant approves a proposal, then DORA calls /availability as before.
 
-Not registered yet: Person 3 adds `app.include_router(calendar_router)` in main.py.
+Registered in backend/main.py. Contract: contracts/api-contract.md (Calendar proposal).
 """
 from __future__ import annotations
 

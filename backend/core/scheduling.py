@@ -16,7 +16,7 @@ from zoneinfo import ZoneInfo
 
 BERLIN = ZoneInfo("Europe/Berlin")
 DEFAULT_DURATION = timedelta(hours=1)
-DEFAULT_STEP_MINUTES = 15
+DEFAULT_STEP_MINUTES = 60
 
 
 class SchedulingError(ValueError):
@@ -79,9 +79,11 @@ def merge_intervals(intervals: Iterable[Interval]) -> list[Interval]:
 
 
 def _round_up(dt: datetime, step_minutes: int) -> datetime:
-    """Round up to the next step boundary on the Berlin wall clock (15:07 -> 15:15)."""
+    """Round up to the next step boundary on the Berlin wall clock (15:07 -> 16:00 for 60)."""
     local = dt.astimezone(BERLIN)
-    floor = local.replace(minute=(local.minute // step_minutes) * step_minutes, second=0, microsecond=0)
+    midnight = local.replace(hour=0, minute=0, second=0, microsecond=0)
+    minutes = (local - midnight) // timedelta(minutes=1)
+    floor = midnight + timedelta(minutes=(minutes // step_minutes) * step_minutes)
     return floor if floor == local else floor + timedelta(minutes=step_minutes)
 
 
@@ -91,8 +93,8 @@ def find_free_slots(provider_windows, tenant_busy, *, duration: timedelta = DEFA
     """Earliest-first, non-overlapping slots of `duration` that lie fully inside a
     provider window and do not touch any tenant busy interval.
 
-    Slot starts are rounded up to `step_minutes` on the Berlin clock so times are
-    easy to say out loud. `not_before` drops anything starting earlier (e.g. now).
+    Slot starts are rounded up to `step_minutes` on the Berlin clock (default: full
+    hours) so times are easy to say out loud. `not_before` drops anything starting earlier (e.g. now).
     """
     if duration <= timedelta(0):
         raise SchedulingError("duration must be positive")

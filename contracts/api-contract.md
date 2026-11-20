@@ -25,7 +25,18 @@ Base: local `http://127.0.0.1:8000`; JSON camel/snake policy: **snake_case**.
 
 ## Planned scheduling
 
-Google and phone calendar connection follow the local core flow. Appointment-proposal operation and any new case fields are TBD (Person 3).
+Google and phone calendar connection follow the local core flow. Phone calendar and `calendar-event` (adding the confirmed appointment to the tenant's calendar) are not built yet.
+
+### Calendar proposal — implemented (Person 3)
+- `POST /api/cases/{case_id}/calendar-proposal` → body `{}` or `{"duration_minutes":60}` (30–240, default 60). Called by DORA only after the tenant agreed to a calendar check.
+- 200 → `{"proposals":[{"start":"2026-11-23T15:00:00+01:00","end":"2026-11-23T16:00:00+01:00"}],"source":"google_calendar"}`
+  - Up to 3 slots, earliest first, non-overlapping, starting on the full hour, Europe/Berlin with offset.
+  - Each slot lies inside a partner window (`data/fixtures/partner.json`) and the tenant's free time. Slots in the past are skipped.
+  - `proposals: []` when there is no overlap.
+  - `source` names where the busy time came from: `google_calendar`, or `fake_calendar` for the offline demo fallback.
+- 404 unknown case; 409 `{"detail":"calendar not connected"}` when no calendar is configured or the token is rejected; 502 calendar provider failed.
+- Read-only: the case is not changed. The tenant approves one proposal, then DORA calls `/availability` with exactly that slot. Partner accept/reject is unchanged; a rejection leaves the booking unconfirmed.
+- One calendar per server (env `DORA_CALENDAR_PROVIDER=google|fake`, `DORA_GOOGLE_CALENDAR_ACCESS_TOKEN`, `DORA_GOOGLE_CALENDAR_ID`, `DORA_FAKE_CALENDAR_FILE`), not per tenant. No new case fields. Google access is read-only free/busy (`calendar.freebusy` scope); only busy start/end is read, never event details.
 
 ## Production interface (partner events implemented; the rest still to do)
 - `POST /internal/partner-events` — **implemented** (Person 3). Header `X-DORA-Token: <DORA_INTERNAL_TOKEN>` is required; a missing or wrong token returns `403`, and every request is refused if the token is not configured. Body:
