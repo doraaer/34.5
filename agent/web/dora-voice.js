@@ -299,11 +299,21 @@ export function createDoraVoice({ agentId, apiBase = "", onStatus, onMessage, on
       return;
     }
 
+    // Load the tenant record first so DORA can greet by name in her very first sentence.
+    let tenantName = "there";
+    try {
+      const { context } = await loadContext();
+      tenantName = String(context.tenant?.name ?? "").trim().split(/\s+/)[0] || "there";
+    } catch {
+      // Backend unreachable: still start, DORA greets generically and her tools report the problem.
+    }
+
     let disconnected = false;
     try {
       const conversation = await Conversation.startSession({
         agentId,
         clientTools,
+        dynamicVariables: { tenant_name: tenantName },
         onConnect: () => status("connected"),
         onDisconnect: () => {
           disconnected = true;
