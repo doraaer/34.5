@@ -79,8 +79,15 @@ def event_update(case_id, partner_job_id, event_type, payload):
         raise HTTPException(409, "partner job mismatch")
     status = case["status"]
     if event_type == "partner.accepted" and status == "awaiting_partner":
-        slot = payload["slot"]
+        slot = payload.get("slot")
         dt = datetime.fromisoformat
+        try:
+            start, end = dt(slot["start"]), dt(slot["end"])
+            slot_ok = bool(start.tzinfo and end.tzinfo and start < end)
+        except (KeyError, TypeError, ValueError):
+            slot_ok = False
+        if not slot_ok:
+            raise HTTPException(400, "accepted event requires slot with valid start and end")
         if not any(dt(w["start"]) <= dt(slot["start"]) and dt(slot["end"]) <= dt(w["end"]) for w in case["available_slots"]):
             raise HTTPException(409, "partner slot outside authorized availability")
         case["appointment"] = slot
