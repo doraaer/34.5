@@ -1,0 +1,23 @@
+/* DORA voice on the tenant page (Person 2). No extra button: the existing sculpture is the talk control. */
+.voice-sculpture.voice-trigger { cursor: pointer; border-radius: 50%; }
+.voice-sculpture.voice-trigger:focus-visible { outline: 2px solid #f3d8ff; outline-offset: 8px; }
+#elevenlabs-agent-container { display: grid; justify-items: center; gap: 8px; margin-top: 20px; width: min(100%, 560px); }
+#elevenlabs-agent-container .voice-state { margin: 0; color: #e4c6ee; }
+#elevenlabs-agent-container .voice-state.error { color: #ffd6d1; }
+.voice-caption {
+  margin: 4px 0 0; min-height: 3em; max-width: 520px; text-align: center;
+  color: #fff4ff; font-size: clamp(17px, 2vw, 21px); line-height: 1.45;
+}
+.voice-caption:empty { min-height: 0; }
+.voice-caption.from-user { color: #d9c2e6; font-style: italic; }
+.voice-calendar { margin: 0; padding: 10px 16px; border-radius: 16px; background: #334640; color: #e6fff4; }
+.voice-calendar a { color: #e6fff4; }
+
+/* The sculpture reacts to the conversation. */
+@media (prefers-reduced-motion:no-preference) {
+  .voice-sculpture.listening { animation: voice-breathe 2.4s ease-in-out infinite; }
+  .voice-sculpture.speaking { animation: voice-speak .9s ease-in-out infinite; filter: brightness(1.25); }
+}
+.voice-sculpture.listening i, .voice-sculpture.speaking i { border-color: #f3d8ff; }
+@keyframes voice-breathe { 50% { transform: scale(1.04); } }
+@keyframes voice-speak { 50% { transform: scale(1.09); } }
