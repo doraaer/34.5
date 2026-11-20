@@ -1,5 +1,5 @@
-from typing import Literal
-from pydantic import BaseModel
+from typing import Annotated, Literal
+from pydantic import BaseModel, StringConstraints
 from backend.core.models import Slot, ServiceReport, Invoice
 
 class CreatePartnerJob(BaseModel):
@@ -17,4 +17,4 @@ class CompleteJob(BaseModel):
     invoice: Invoice
 
 class RejectJob(BaseModel):
-    reason: str
+    reason: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
