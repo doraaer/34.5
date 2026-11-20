@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MaintenanceCase",
+  "type": "object",
+  "required": [
+    "case_id",
+    "tenant_id",
+    "unit_id",
+    "building_id",
+    "service_type",
+    "status",
+    "description",
+    "priority",
+    "available_slots",
+    "booking_authorized"
+  ],
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "unit_id": {
+      "type": "string"
+    },
+    "building_id": {
+      "type": "string"
+    },
+    "service_type": {
+      "enum": [
+        "heating_repair",
+        "scheduled_heating_maintenance"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "priority": {
+      "enum": [
+        "routine",
+        "urgent"
+      ]
+    },
+    "status": {
+      "enum": [
+        "reported",
+        "awaiting_partner",
+        "scheduled",
+        "in_progress",
+        "completed",
+        "needs_attention"
+      ]
+    },
+    "available_slots": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "booking_authorized": {
+      "type": "boolean"
+    },
+    "partner_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "partner_job_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "appointment": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "service_report": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "invoice": {
+      "type": [
+        "object",
+        "null"
+      ]
+    }
+  }
+}
