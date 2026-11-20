@@ -10,6 +10,7 @@
     document.querySelector(".welcome").hidden = open;
     $("library").setAttribute("aria-expanded", String(open));
     window.scrollTo(0, 0);
+    if (!open) $("conversation").scrollTop = 0;
     (open ? $("library-title") : $("conversation").querySelector("h1")).focus({preventScroll:true});
   }
   $("library").onclick = () => showLibrary($("requests").hidden);
@@ -157,6 +158,70 @@
   });
   const landing = $("dora-landing");
   const motion = matchMedia("(prefers-reduced-motion: reduce)");
+  const descriptionField = $("description");
+  const examples = [
+    descriptionField.placeholder,
+    "The heating turns off every evening.",
+    "Only one room in my flat feels warm."
+  ];
+  let example = 0, length = examples[0].length, deleting = true, timer;
+  let composerVisible = false;
+  function typeExample() {
+    const phrase = examples[example];
+    length += deleting ? -1 : 1;
+    descriptionField.placeholder = phrase.slice(0, length);
+    if (!length) {
+      example = (example + 1) % examples.length;
+      deleting = false;
+    } else if (length === phrase.length) {
+      deleting = true;
+    }
+    const pause = deleting && length === phrase.length ? 1800 : !length ? 330 : deleting ? 32 : 60;
+    timer = setTimeout(typeExample, pause);
+  }
+  function resetExamples() {
+    clearTimeout(timer);
+    descriptionField.placeholder = examples[example];
+    length = examples[example].length;
+    deleting = true;
+    if (composerVisible && !motion.matches && !document.hidden &&
+        document.activeElement !== descriptionField && !descriptionField.value) {
+      timer = setTimeout(typeExample, 1800);
+    }
+  }
+  new IntersectionObserver(([entry]) => {
+    composerVisible = entry.isIntersecting;
+    resetExamples();
+  }, {threshold: .5}).observe(descriptionField);
+  descriptionField.addEventListener("focus", resetExamples);
+  descriptionField.addEventListener("blur", resetExamples);
+  document.addEventListener("visibilitychange", resetExamples);
+  motion.addEventListener("change", resetExamples);
+  const conversation = $("conversation");
+  let wheelDistance = 0, lastWheel = 0, latched = false;
+  conversation.addEventListener("wheel", event => {
+    if (event.ctrlKey || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+    if (event.target === descriptionField && descriptionField.scrollHeight > descriptionField.clientHeight) return;
+    const now = performance.now();
+    if (now - lastWheel > 170 || wheelDistance * event.deltaY < 0) {
+      wheelDistance = 0;
+      latched = false;
+    }
+    lastWheel = now;
+    wheelDistance += event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? conversation.clientHeight : 1);
+    const stage = document.querySelector(".composer-stage");
+    if (stage.offsetHeight > conversation.clientHeight + 2 && conversation.scrollTop >= conversation.clientHeight - 2) return;
+    event.preventDefault();
+    if (latched || Math.abs(wheelDistance) < 16) return;
+    latched = true;
+    conversation.scrollTo({top: wheelDistance > 0 ? conversation.clientHeight : 0,
+      behavior: motion.matches ? "instant" : "smooth"});
+  }, {passive:false});
+  document.querySelector(".write-link").onclick = event => {
+    event.preventDefault();
+    document.querySelector(".composer-stage").scrollIntoView({behavior: motion.matches ? "instant" : "smooth"});
+    descriptionField.focus({preventScroll:true});
+  };
   landing.addEventListener("pointermove", event => {
     if (motion.matches || event.pointerType !== "mouse") return;
     const bounds = landing.getBoundingClientRect();

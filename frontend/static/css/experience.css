@@ -74,3 +74,5 @@ textarea, select { background-color: #100f13; border-color: #57525d; color: var(
   .resident-hero { gap: 8px; padding: 24px 16px; }
   .glass-mark { margin-right: 4px; width: 64px; }
 }
+
+body, button, input, select, textarea, code, pre, .case-id { font-family: Helvetica, "Helvetica Neue", Arial, sans-serif; }
