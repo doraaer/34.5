@@ -299,13 +299,22 @@ export function createDoraVoice({ agentId, apiBase = "", onStatus, onMessage, on
       return;
     }
 
-    // Load the tenant record first so DORA can greet by name in her very first sentence.
-    let tenantName = "there";
+    // Load the tenant record first and hand it to DORA as dynamic variables, so she knows the
+    // tenant, flat and 1-hour slots from her very first sentence without a lookup mid-conversation.
+    const dynamicVariables = {
+      tenant_name: "there", unit_id: "unknown", building_address: "unknown",
+      heating_type: "unknown", partner_name: "unknown", available_slots: "unknown",
+    };
     try {
-      const { context } = await loadContext();
-      tenantName = String(context.tenant?.name ?? "").trim().split(/\s+/)[0] || "there";
+      const { context, windows } = await loadContext();
+      dynamicVariables.tenant_name = String(context.tenant?.name ?? "").trim().split(/\s+/)[0] || "there";
+      dynamicVariables.unit_id = context.tenant?.unit_id ?? "unknown";
+      dynamicVariables.building_address = context.building?.address ?? "unknown";
+      dynamicVariables.heating_type = context.building?.heating_type ?? "unknown";
+      dynamicVariables.partner_name = context.partner?.name ?? "unknown";
+      dynamicVariables.available_slots = Array.from(windows, ([id, slot]) => `${id} = ${labelSlot(slot)}`).join("; ") || "none";
     } catch {
-      // Backend unreachable: still start, DORA greets generically and her tools report the problem.
+      // Backend unreachable: still start; DORA greets generically and her tools report the problem.
     }
 
     let disconnected = false;
@@ -313,7 +322,7 @@ export function createDoraVoice({ agentId, apiBase = "", onStatus, onMessage, on
       const conversation = await Conversation.startSession({
         agentId,
         clientTools,
-        dynamicVariables: { tenant_name: tenantName },
+        dynamicVariables,
         onConnect: () => status("connected"),
         onDisconnect: () => {
           disconnected = true;

@@ -5,11 +5,14 @@
   "agent_id_env": "ELEVENLABS_AGENT_ID",
   "agent_id_note": "The agent ID is not a secret: the browser needs it to start a session. Never commit an ElevenLabs API key.",
   "language": "en",
-  "llm": "deepseek-v41-flash (ElevenLabs default at creation; revisit if tool calling is unreliable)",
+  "llm": "gemini-3.5-flash, reasoning_effort minimal (switched from deepseek-v41-flash after it stalled on tool calls; billed through ElevenLabs credits, no separate key)",
   "voice_id": "XJVfsOvSwUXluggMM5Jj (Stephanie v2 - confident, clear, calm; female)",
   "tts": { "model_id": "eleven_v4_turbo", "stability": 0.75, "similarity_boost": 0.8, "speed": 1.0, "expressive_mode": false },
   "first_message": "Hey {{tenant_name}}, how can I help you?",
-  "dynamic_variables": { "tenant_name": "first name from /api/context, passed by agent/web/dora-voice.js at session start (placeholder: \"there\")" },
+  "dynamic_variables": {
+    "_note": "Filled by agent/web/dora-voice.js from /api/context before the session starts, so DORA needs no lookup mid-call. Placeholders: tenant_name='there', others='unknown'.",
+    "names": ["tenant_name", "unit_id", "building_address", "heating_type", "partner_name", "available_slots"]
+  },
   "temperature": 0.4,
   "appointment_length_minutes": 60,
   "prompt_file": "agent/system-prompt.md",
