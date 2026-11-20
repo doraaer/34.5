@@ -34,3 +34,18 @@ def test_invalid_transition_is_409_and_unknown_case_404(client, monkeypatch):
     started = {"type": "partner.started", "case_id": cid, "partner_job_id": jid}
     assert client.post("/internal/partner-events", json=started, headers=H).status_code == 409
     assert client.post("/internal/partner-events", json=event("CASE-NOPE", jid), headers=H).status_code == 404
+
+def test_malformed_payload_is_400_not_500(client, monkeypatch):
+    monkeypatch.setenv("DORA_INTERNAL_TOKEN", "test-token")
+    cid, jid = dispatched(client)
+    base = {"type": "partner.accepted", "case_id": cid, "partner_job_id": jid}
+    assert client.post("/internal/partner-events", json={**base, "payload": {}}, headers=H).status_code == 400
+    assert client.post("/internal/partner-events", json={**base, "payload": {"slot": {"start": "x"}}}, headers=H).status_code == 400
+    assert client.get(f"/api/cases/{cid}").json()["status"] == "awaiting_partner"
+
+def test_slot_without_timezone_is_400(client, monkeypatch):
+    monkeypatch.setenv("DORA_INTERNAL_TOKEN", "test-token")
+    cid, jid = dispatched(client)
+    body = {"type": "partner.accepted", "case_id": cid, "partner_job_id": jid,
+            "payload": {"slot": {"start": "2026-11-23T15:00:00", "end": "2026-11-23T16:00:00"}}}
+    assert client.post("/internal/partner-events", json=body, headers=H).status_code == 400
