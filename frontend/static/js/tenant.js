@@ -141,17 +141,34 @@
       await refresh();
     }
   });
+  const landing = $("dora-landing");
+  const motion = matchMedia("(prefers-reduced-motion: reduce)");
+  landing.addEventListener("pointermove", event => {
+    if (motion.matches || event.pointerType !== "mouse") return;
+    const bounds = landing.getBoundingClientRect();
+    const x = (event.clientX - bounds.left) / bounds.width - .5;
+    const y = (event.clientY - bounds.top) / bounds.height - .5;
+    landing.style.setProperty("--mouse-x", x * 92 + "px");
+    landing.style.setProperty("--mouse-y", y * 72 + "px");
+  });
+  landing.addEventListener("pointerleave", () => {
+    landing.style.removeProperty("--mouse-x");
+    landing.style.removeProperty("--mouse-y");
+  });
   $("open-dora").onclick = () => {
     const opener = $("open-dora");
     opener.disabled = true;
     opener.setAttribute("aria-expanded", "true");
     opener.classList.add("opening");
-    setTimeout(() => {
+    const reveal = () => {
       $("dora-landing").hidden = true;
       $("dora-app").hidden = false;
       $("conversation").hidden = false;
       $("conversation").querySelector("h1").focus({ preventScroll: true });
-    }, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 420);
+    };
+    const opening = opener.getAnimations().find(animation => animation.animationName === "dissolve");
+    if (opening) opening.finished.then(reveal, reveal);
+    else reveal();
   };
   $("retry-slots").onclick = loadSlots;
   $("slot").onchange = () => { $("booking-consent").checked = false; $("sharing-consent").checked = false; };

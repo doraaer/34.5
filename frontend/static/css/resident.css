@@ -29,10 +29,12 @@
 .lava i {
   position: absolute;
   width: clamp(250px, 48vw, 780px);
+  translate: calc(var(--mouse-x, 0px) * var(--depth, 1)) calc(var(--mouse-y, 0px) * var(--depth, 1));
+  transition: translate 650ms ease-out;
   aspect-ratio: 1.15;
   border-radius: 52% 48% 37% 63% / 52% 64% 36% 48%;
-  filter: blur(clamp(25px, 5vw, 88px));
-  animation: lava-drift 19s ease-in-out infinite alternate;
+  filter: blur(clamp(12px, 2.1vw, 36px));
+  animation: lava-drift 12s ease-in-out infinite alternate;
 }
 .lava i:nth-child(1) {
   left: -17%;
@@ -40,28 +42,31 @@
   background: radial-gradient(ellipse at 65% 30%, #ffc087, #b44a8c 48%, #4e206a 78%);
 }
 .lava i:nth-child(2) {
+  --depth: -.8;
   right: -16%;
   top: -20%;
   background: radial-gradient(ellipse at 44% 66%, #969fe4, #644ab1 48%, #3c205b 77%);
-  animation-duration: 25s;
+  animation-duration: 16s;
   animation-delay: -9s;
 }
 .lava i:nth-child(3) {
+  --depth: 1.45;
   left: 12%;
   top: 2%;
   width: clamp(130px, 24vw, 410px);
   background: radial-gradient(ellipse at 62% 48%, #a95da7, #682a87 58%, transparent 76%);
   opacity: .65;
-  animation-duration: 22s;
+  animation-duration: 13s;
   animation-delay: -14s;
 }
 .lava i:nth-child(4) {
+  --depth: -.55;
   right: 1%;
   bottom: -3%;
   width: clamp(170px, 32vw, 540px);
   background: radial-gradient(ellipse at 55% 50%, #c376a5, #672f9e 60%, transparent 79%);
   opacity: .72;
-  animation-duration: 27s;
+  animation-duration: 18s;
   animation-delay: -17s;
 }
 @keyframes lava-drift {
@@ -70,6 +75,7 @@
   100% { transform: translate(4%, -35%) rotate(40deg) scale(.92, 1.08); }
 }
 #open-dora {
+  position: relative;
   display: grid;
   place-items: center;
   width: clamp(265px, 42vw, 560px);
@@ -88,15 +94,37 @@
   pointer-events: none;
   animation: float 7s ease-in-out infinite alternate;
   mask-image: radial-gradient(circle closest-side, #000 77%, transparent 100%);
-  transition: transform .28s ease;
+  transition: scale .65s cubic-bezier(.2,.75,.25,1), filter .65s ease;
 }
-#open-dora:hover img { transform: scale(1.045); }
+@media (hover: hover) {
+  #open-dora:hover img { scale: 1.065; filter: brightness(1.09); }
+}
+#open-dora::after {
+  content: "";
+  position: absolute;
+  inset: 17% 13% 18%;
+  border-radius: 52% 48% 53% 44%;
+  pointer-events: none;
+  border: 1px solid transparent;
+  border-top-color: rgb(235 212 255 / 38%);
+  border-right-color: rgb(207 170 251 / 15%);
+  animation: rim-light 8s ease-in-out infinite alternate;
+}
+@keyframes rim-light {
+  from { transform: rotate(-25deg) scale(.98); opacity: .2; }
+  to { transform: rotate(35deg) scale(1.045); opacity: .85; }
+}
 #open-dora:focus-visible { outline: 2px solid #f7ddff; outline-offset: -12px; }
-#open-dora.opening { animation: dissolve .42s ease-in both; cursor: default; }
+#open-dora.opening { animation: dissolve 1.35s cubic-bezier(.45,0,.3,1) both; cursor: default; }
 @keyframes float { to { transform: translateY(-10px) rotate(1deg); } }
-@keyframes dissolve { to { transform: scale(1.32); opacity: 0; filter: blur(7px); } }
+@keyframes dissolve {
+  0% { transform: scale(1); opacity: 1; }
+  55% { transform: scale(1.24); opacity: 1; }
+  100% { transform: scale(1.65); opacity: 0; filter: blur(7px); }
+}
 @media (prefers-reduced-motion: reduce) {
-  .lava i, #open-dora img, #open-dora.opening { animation: none; }
+  .lava i, #open-dora img, #open-dora::after, #open-dora.opening { animation: none; }
+  .lava i { translate: none; }
   #open-dora img { transition: none; }
 }
 #conversation { width: min(100%, 490px); }
