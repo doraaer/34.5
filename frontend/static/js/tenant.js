@@ -141,7 +141,17 @@
       await refresh();
     }
   });
-  $("write-instead").onclick = () => $("description").focus();
+  $("open-dora").onclick = () => {
+    const opener = $("open-dora");
+    opener.disabled = true;
+    opener.setAttribute("aria-expanded", "true");
+    opener.classList.add("opening");
+    setTimeout(() => {
+      opener.hidden = true;
+      $("conversation").hidden = false;
+      $("conversation").querySelector("h1").focus({ preventScroll: true });
+    }, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 420);
+  };
   $("retry-slots").onclick = loadSlots;
   $("slot").onchange = () => { $("booking-consent").checked = false; $("sharing-consent").checked = false; };
   $("refresh").onclick = refresh;

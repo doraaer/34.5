@@ -16,9 +16,11 @@ const fs = require("node:fs");
   };
   try {
     await page.goto(base + "/tenant");
+    await page.locator("#open-dora").click();
     await page.locator("#report-fields:not([disabled])").waitFor();
     await waitText(page.locator("#home-context"), "Lena Demo");
     const description = "Browser smoke: cold living room radiators " + Date.now();
+
     await page.locator("#description").fill(description);
     await page.locator("#create").click();
     await waitText(page.locator("#case"), description);
@@ -35,11 +37,12 @@ const fs = require("node:fs");
     const provider = await context.newPage();
     await provider.goto(base + "/partner");
     const card = provider.locator(".card").filter({ hasText: caseId });
-    await card.getByRole("button", { name: "Accept job", exact: true }).click();
+    await card.locator("select").selectOption({ index: 1 });
+    await card.getByRole("button", { name: /^Accept .*15:00/ }).click();
     await card.getByRole("button", { name: "Start work", exact: true }).waitFor();
     await page.bringToFront(); await page.locator("#refresh").click();
     await waitText(page.locator("#case .pill"), "Appointment confirmed");
-    await page.locator("#case .appointment").waitFor();
+    await waitText(page.locator("#case .appointment"), /15:00.*16:00/);
     await provider.bringToFront();
     await card.getByRole("button", { name: "Start work", exact: true }).click();
     await card.getByRole("button", { name: "Complete repair", exact: true }).waitFor();
@@ -47,7 +50,7 @@ const fs = require("node:fs");
     await waitText(page.locator("#case .pill"), "Work in progress");
     await provider.bringToFront();
     await card.getByRole("button", { name: "Complete repair", exact: true }).click();
-    await waitText(card, "completed");
+    await waitText(card, "Completed");
     await page.bringToFront(); await page.locator("#refresh").click();
     await waitText(page.locator("#case .pill"), "Completed");
     const manager = await context.newPage();
@@ -69,7 +72,12 @@ const fs = require("node:fs");
     const available = await (await context.request.get(base + "/partner/availability")).json();
     await context.request.post(base + "/api/cases/" + rejected.case_id + "/availability", { data: { available_slots: [available[0]], booking_authorized: true, data_sharing_consent: true } });
     const sent = await (await context.request.post(base + "/api/cases/" + rejected.case_id + "/dispatch")).json();
-    assert.ok((await context.request.post(base + "/partner/jobs/" + sent.partner_job_id + "/reject", { data: { reason: "No technician available" } })).ok());
+    await provider.locator("#refresh").click();
+    const rejectedCard = provider.locator(".card").filter({hasText: rejected.case_id});
+    await rejectedCard.getByRole("button", {name:"Reject", exact:true}).click();
+    await rejectedCard.locator("textarea").fill("No technician available");
+    await rejectedCard.getByRole("button", {name:"Confirm rejection"}).click();
+    await waitText(rejectedCard, "Rejected");
     await page.evaluate(id => localStorage.setItem("dora_case_id", id), rejected.case_id);
     await page.reload(); await waitText(page.locator("#case .pill"), "Needs attention");
     assert.equal(await page.locator("#case .appointment").count(), 0);
@@ -90,3 +98,5 @@ const fs = require("node:fs");
     console.log("PASS: reload recovery, no premature confirmation, rejection, offline preservation, mobile overflow, no JS errors");
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
+
+
