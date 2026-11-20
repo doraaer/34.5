@@ -252,5 +252,11 @@
   $("retry-slots").onclick = loadSlots;
   $("slot").onchange = () => { $("booking-consent").checked = false; $("sharing-consent").checked = false; };
   $("refresh").onclick = refresh;
+  // DORA voice (tenant-voice.js) announces cases it creates or updates, so the saved requests stay in sync.
+  window.addEventListener("dora:case-updated", event => {
+    const id = event.detail?.case_id;
+    if (id && !mutation) { current = id; D.storageSet("dora_case_id", id); }
+    caseSignature = ""; listSignature = ""; refresh();
+  });
   D.poll(refresh); loadSlots();
 })();
