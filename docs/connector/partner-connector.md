@@ -1,76 +1,108 @@
-# DORA Partner Connector Specification (Reltix deliverable, v0)
+# DORA partner connector specification
 
-## Purpose
-Define reusable integration points so additional service partners can connect to a centrix-like maintenance platform without rewriting DORA's tenant agent or case engine. This hackathon implements ONE simulated German SHK (Sanitär/Heizung/Klima) provider; the external live integration is **not** claimed.
+Team 34.5 · Reltix track · Residential heating repair
 
-## Principles
-- DORA and Centrix own resident context, authorization and case state.
-- Partner owns its service catalogue, regional eligibility, available appointments, job acceptance, technician updates, completion report and invoice.
-- Connector exposes stable generic operations; individual adapters may speak API, email or phone, but those channels have NOT been implemented equally.
-- Never treat receiving an HTTP request as confirmed booking.
-- Partner data sharing is limited to what's needed, consent-aware and logged.
+## Why this partner
 
-## Minimum capabilities
-1. `list_services()`: service code, name, coverage, emergency availability, requirements.
-2. `check_eligibility(building, service)`: geographic and contract eligibility.
-3. `get_availability(service, address, preferred_windows)`: time slots, timezone, expiration.
-4. `create_job(request)`: case_id, issue, necessary access details, authorized windows, idempotency key.
-5. `accept_job(job_id, slot)` or `decline_job(job_id, reason)`.
-6. `get_job_status(job_id)` and/or authenticated callback for state change.
-7. `complete_job(job_id, report, invoice)`: final outcome linked to original case.
+When a resident reports cold radiators, the property manager already knows which contractor covers the building. The missing pieces are permission to share the repair request, a time the resident can let a technician in, and evidence that the repair was completed. DORA connects those steps through one work order.
 
-## Mock REST wire shape
+The example uses a fictional German heating contractor, `SHK-001`, assigned to a six-unit building with central gas heating. The resident authorizes a visit to Unit 102. The contractor chooses a time, records the work performed and sends an invoice addressed to the property owner. The manager can follow the same case from the first report to the repair outcome.
 
-`GET /partner/services` returns a mock heating repair service. `GET /partner/availability` returns offered windows as `start`/`end` objects with ISO 8601 offsets. Acceptance requires a slot inside a provider window and a tenant-authorized window. An out-of-window slot returns `409`. The eligibility and signed callback capabilities above describe a future adapter. The local mock hands off events in-process.
+## What a provider implements
 
-### `POST /partner/jobs`
+DORA owns the resident’s authorization and the Centrix case, identified by `case_id`. The provider owns its capacity, its work order (`partner_job_id`), and the account of what its technician did. The demo runs locally at `http://127.0.0.1:8000`. All request and response bodies use JSON.
+
+| Capability | Mock provider interface | Provider responsibility |
+|---|---|---|
+| Service and eligibility | `GET /partner/services` | Return the catalogue. In the demo, the building fixture identifies its contracted provider and the catalogue offers `heating_repair`. A new provider must define which services and buildings it covers. |
+| Availability | `GET /partner/availability` | Return an array of windows with offset-aware `start` and `end`. The operator can select an interval inside a window. A lookup does not reserve time. |
+| Job creation | `POST /partner/jobs` | Return a job record containing both IDs and status `received`. Repeated creation for the same case returns the existing record. |
+| Job lookup | `GET /partner/jobs` | Return the provider’s job records. Find the relevant record by its job ID. |
+| Acceptance or rejection | `POST /partner/jobs/{job_id}/accept` or `/reject` | Accept a specific slot or decline with a reason. Each suffix is relative to the same job URL. |
+| Fulfilment | `POST /partner/jobs/{job_id}/start`, then `/complete` | Start the visit, then return the service report and invoice. Successful actions return the updated job. |
+
+## One repair from request to invoice
+
+IDs below illustrate one repair. Use the IDs returned by your running system.
+
+**1. Authorize and dispatch.** DORA creates the Centrix case through `POST /api/cases`. For this example the tenant gives their availability directly. DORA sends this body to `POST /api/cases/{case_id}/availability` before calling `POST /api/cases/{case_id}/dispatch`.
+
 ```json
 {
-  "case_id": "CASE-001",
+  "available_slots": [{"start":"2026-11-23T15:00:00+01:00","end":"2026-11-23T16:00:00+01:00"}],
+  "booking_authorized": true,
+  "data_sharing_consent": true
+}
+```
+
+**2. Receive the work order.** The following is the provider’s `POST /partner/jobs` request shape. Local dispatch invokes the same job-creation logic in-process and saves the returned job ID on the case. The provider receives the address, unit, issue, authorized windows and case reference. Calendar contents, owner documents and other residents’ records stay outside the handoff.
+
+```json
+{
+  "case_id": "CASE-1A2B3C4D",
   "service_type": "heating_repair",
-  "location": "Musterstrasse 12, Unit 102, Düsseldorf, Germany",
-  "description": "Resident reports cold radiators",
-  "available_slots": [{"start":"2026-11-23T14:00:00+01:00","end":"2026-11-23T17:00:00+01:00"}]
+  "location": "Musterstrasse 12, Düsseldorf, Germany, UNIT-102",
+  "description": "Cold radiator in Unit 102",
+  "available_slots": [{"start":"2026-11-23T15:00:00+01:00","end":"2026-11-23T16:00:00+01:00"}]
 }
 ```
 
-## Example response to accepted booking
+For example, the returned job has `partner_job_id` equal to `JOB-AB12CD34`, the same `case_id`, and status `received`. The case is `awaiting_partner` and its appointment is empty.
+
+**3. Accept the visit.** The provider offers 14:00–17:00 on 23 November. The resident authorized 15:00–16:00. Send the following to `POST /partner/jobs/{job_id}/accept`. Only a successful acceptance changes the case to `scheduled`.
+
 ```json
-{"partner_job_id":"SHK-JOB-001","case_id":"CASE-001","status":"accepted","slot":{"start":"2026-11-23T15:00:00+01:00","end":"2026-11-23T16:00:00+01:00"}}
+{"slot":{"start":"2026-11-23T15:00:00+01:00","end":"2026-11-23T16:00:00+01:00"}}
 ```
 
-## Example completion event
+In the single-technician implementation, acceptance reserves just that interval. Subsequent availability includes 14:00–15:00 and 16:00–17:00. A competing acceptance for 15:30–16:30 returns `409`. If the contractor declines before accepting, send a body such as `{"reason":"Technician unavailable"}` to the rejection endpoint. The job becomes `rejected` and the case becomes `needs_attention`.
+
+**4. Finish the repair.** Call `POST /partner/jobs/{job_id}/start` with no body. After the technician finishes, send this body to `POST /partner/jobs/{job_id}/complete`.
+
 ```json
 {
-  "event_id":"SHK-JOB-001:partner.completed",
-  "type":"partner.completed",
-  "case_id":"CASE-001",
-  "partner_job_id":"SHK-JOB-001",
-  "payload": {
-    "service_report":{"summary":"Heating restored","work_done":"Repaired radiator valve"},
-    "invoice":{"invoice_id":"INV-001","amount_eur":125.0,"currency":"EUR","recipient":"property_owner"}
-  }
+  "service_report": {"summary":"Heating restored","work_done":"Freed the radiator valve and verified heat in Unit 102."},
+  "invoice": {"invoice_id":"INV-001","amount_eur":125.0,"currency":"EUR","recipient":"property_owner"}
 }
 ```
 
-## Status semantics and ownership
-`received` = delivered to partner platform, **not** assigned. `accepted` = company commits to request/slot. `in_progress` = technician attending. `completed` = report and invoice received. `rejected` = work not accepted. DORA persists a matching case lifecycle but never silently infers contractor acceptance.
+Read `GET /api/cases/{case_id}` to verify the outcome. The case and job should both be `completed` and carry the same report and invoice. The invoice is a record for the manager. Payment processing is outside the demo.
 
-## API adapter & alternative channels
-Hackathon backend implements a mock REST API; provider dashboard simulates employee acceptance/completion. An email/SMS/voice adapter could translate the same request, but would require acknowledgement parsing, human confirmation, delivery error handling and service agreements. Do not label future adapters as live functionality.
+## Returning events to Centrix
 
-## Failure and security rules
-- Authentication: signed token/OAuth/API key or webhook signature; private backend configuration only.
-- Idempotency: the mock returns the existing job for the same `case_id` and the stored result for repeated completion. Core deduplicates local events by `<partner_job_id>:<event_type>`.
-- Timeout: retry with backoff, track delivery/ack separately; do not fabricate confirmation.
-- Invalid slot: return 409 and request new options.
-- Rejection: `rejected` + reason; normal escalation or another contracted partner if policy allows.
-- Cancellation/rescheduling: implement in mature version; preserve audit history.
-- Time: ISO 8601 timestamp and Europe/Berlin offset in this example.
-- GDPR hygiene: only authorized data, retention controls, access logs; mock data in public demo.
+The local SHK service calls `emit_partner_event` in-process. A separate adapter can call the implemented `POST /internal/partner-events` receiver with the server-side `X-DORA-Token` header matching `DORA_INTERNAL_TOKEN`. The receiver updates the Centrix case and returns it. The adapter remains responsible for its own job record.
 
-## Extensibility
-A second partner adapter satisfies the same methods and maps its native states into DORA statuses. Service catalogue and eligibility are configuration/data, not hardcoded LLM assumptions.
+| Event type | Payload | Resulting Centrix state |
+|---|---|---|
+| `partner.accepted` | The acceptance body from step 3 | `scheduled` |
+| `partner.started` | `{}` | `in_progress` |
+| `partner.completed` | The completion body from step 4 | `completed` |
+| `partner.rejected` | `{"reason":"Technician unavailable"}` | `needs_attention` |
 
-## Hackathon honesty
-This document states the proposed full generic contract. Current scaffold runs only a simplified local mock partner. Confirm actual endpoint coverage before final submission; do not call unimplemented callback/phone features finished.
+Example callback for the start of the same repair:
+
+```json
+{
+  "event_id":"JOB-AB12CD34:partner.started",
+  "type":"partner.started",
+  "case_id":"CASE-1A2B3C4D",
+  "partner_job_id":"JOB-AB12CD34",
+  "payload":{}
+}
+```
+
+Use the same `<partner_job_id>:<event_type>` on every delivery of one event. If the response is lost, retry the callback with the same ID and payload. A processed ID returns the current case. If a provider action times out, check the job record first. Repeating completion returns the original result and invoice. Repeating acceptance after success returns a state conflict.
+
+| Response | How the caller should handle it |
+|---|---|
+| `400` | Correct the callback payload, for example a malformed accepted slot or missing completion report. |
+| `403` | Check the internal callback token and server configuration. Keep the token out of browsers and job payloads. |
+| `404` | Check the case or job ID against the original dispatch. |
+| `409` | Read the job and case again. For a slot conflict, refresh provider availability and respect the tenant’s authorized window. |
+| `422` | Correct the request shape. Slots need a timezone offset and an end after the start. |
+
+## Adding a second partner
+
+For a move-out cleaner, for example, define the cleaning service and eligible properties, map the provider’s job reference to `partner_job_id`, and translate its booking, start, rejection and completion signals into the four events above. Use its completion report and invoice to close the same Centrix case. Supporting that service would require extending the demo’s heating-only service catalogue and request model. The lifecycle and event envelope can be reused.
+
+**Delivery status.** The provider dashboard, single-technician reservations, persisted rejection reasons and token-authenticated Centrix event receiver are on the main branch. The weekly dashboard calendar shows sample visits alongside API-backed work orders. Only an accepted work order reserves provider capacity. The local demo uses fictional property and provider data. When `N8N_WEBHOOK_URL` is configured, dispatch posts the work order to the workflow. Otherwise it calls the mock provider locally. External contractors would need their own authentication and network delivery retry handling.
