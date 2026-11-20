@@ -1,5 +1,7 @@
+import os
 from uuid import uuid4
 from datetime import datetime
+import httpx
 from fastapi import HTTPException
 from backend.core import database as db
 from backend.core.models import CreateCase, AvailabilityConsent
@@ -51,23 +53,44 @@ def save_availability(case_id, body: AvailabilityConsent):
     db.save("cases", "case_id", case_id, case)
     return case
 
+def send_locally(request):
+    """Direct in-process mock partner; used only when N8N_WEBHOOK_URL is unset."""
+    from backend.partner.service import create_partner_job
+    return create_partner_job(
+        case_id=request["case_id"], service_type=request["service_type"],
+        description=request["description"], location=request["location"],
+        available_slots=request["available_slots"])
+
+def send_via_n8n(request):
+    """POST the work order to the n8n dispatch webhook. Never fakes a job: any
+    failure is a 502 and the case stays `reported` so dispatch can be retried."""
+    headers = {"X-DORA-Token": os.environ.get("DORA_INTERNAL_TOKEN", "")}
+    try:
+        response = httpx.post(os.environ["N8N_WEBHOOK_URL"], json=request, headers=headers, timeout=15)
+        response.raise_for_status()
+        job = response.json()
+    except (httpx.HTTPError, ValueError):
+        raise HTTPException(502, "dispatch to partner via n8n failed")
+    if not isinstance(job, dict) or job.get("case_id") != request["case_id"] or not job.get("partner_job_id"):
+        raise HTTPException(502, "n8n returned an invalid partner job")
+    return job
+
 def dispatch_case(case_id):
     case = require_case(case_id)
     if case["partner_job_id"]:
         return case
     if not case["booking_authorized"] or not case["data_sharing_consent"] or not case["available_slots"]:
         raise HTTPException(409, "booking authorization, consent and windows required")
-    # Working local-mode demonstration. Person 3 must implement actual n8n dispatch
-    # before claiming n8n is connected.
-    from backend.partner.service import create_partner_job
     building = db.fixture("building.json")
-    job = create_partner_job(
-        case_id=case_id,
-        service_type=case["service_type"],
-        description=case["description"],
-        location=building["address"] + ", " + case["unit_id"],
-        available_slots=case["available_slots"]
-    )
+    request = {
+        "idempotency_key": f"{case_id}:dispatch:v1",
+        "case_id": case_id,
+        "service_type": case["service_type"],
+        "description": case["description"],
+        "location": building["address"] + ", " + case["unit_id"],
+        "available_slots": case["available_slots"],
+    }
+    job = send_via_n8n(request) if os.environ.get("N8N_WEBHOOK_URL") else send_locally(request)
     case["partner_job_id"] = job["partner_job_id"]
     case["status"] = "awaiting_partner"
     db.save("cases", "case_id", case_id, case)
