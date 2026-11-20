@@ -118,3 +118,11 @@ then ask DORA for case status and check for `scheduled`. Use Stop talking to end
 the session.
 
 [ElevenLabs JavaScript SDK](https://elevenlabs.io/docs/eleven-agents/libraries/java-script)
+
+## Automatic "add to calendar" (new)
+If the tenant says yes to "put it in your calendar automatically once they confirm?", the page keeps watching
+the case after dispatch (every few seconds, while the page is open, even after the voice call ended).
+The moment the partner accepts, it adds the appointment:
+- via the backend `POST /api/cases/{id}/calendar-event` when it exists → calls `onCalendarAdded({ label, provider })`
+- otherwise → calls `onCalendarFile({ url, filename, label })` so you can show an "Add to calendar" link.
+Pass both callbacks to `createDoraVoice(...)`; see `voice-panel.example.html`. It never adds the same case twice.

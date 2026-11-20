@@ -19,6 +19,7 @@ EXPECTED_TOOLS = {
     "dispatch_to_partner": set(),
     "get_case_status": set(),
 }
+OPTIONAL_PARAMS = {"save_availability_and_consent": {"add_to_calendar"}}
 JSON_HEADERS = {"Content-Type": "application/json"}
 
 
@@ -31,7 +32,7 @@ def check_tool_definitions():
         name = tool["name"]
         params = tool["parameters"]
         assert tool["type"] == "client" and tool["expects_response"] is True, name
-        assert set(params["properties"]) == EXPECTED_TOOLS[name], name
+        assert set(params["properties"]) == EXPECTED_TOOLS[name] | OPTIONAL_PARAMS.get(name, set()), name
         assert sorted(params["required"]) == sorted(EXPECTED_TOOLS[name]), name
 
 

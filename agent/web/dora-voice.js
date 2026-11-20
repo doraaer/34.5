@@ -4,6 +4,7 @@ const caseKey = "dora_case_id";
 // Appointments are offered as 1-hour slots carved out of the partner's longer windows.
 const SLOT_MINUTES = 60;
 const MAX_SLOTS = 12;
+const WATCH_INTERVAL_MS = 4000;
 const windowsByApi = new Map();
 const proposalsByApi = new Map();
 const berlinDate = new Intl.DateTimeFormat("en-GB", {
@@ -73,7 +74,9 @@ function notify(callback, value) {
   }
 }
 
-export function createDoraVoice({ agentId, apiBase = "", onStatus, onMessage, onToolEvent, onError, onCalendarFile }) {
+export function createDoraVoice({
+  agentId, apiBase = "", onStatus, onMessage, onToolEvent, onError, onCalendarFile, onCalendarAdded,
+}) {
   const base = apiBase.replace(/\/+$/, "");
   let memoryCaseId = null;
   let storageAvailable = true;
@@ -158,6 +161,78 @@ export function createDoraVoice({ agentId, apiBase = "", onStatus, onMessage, on
     }
   }
 
+  // Per-case calendar state in localStorage: "auto" = tenant agreed to auto-add once confirmed,
+  // "added:<method>" = already added. Survives page reloads so the watcher can resume.
+  const calendarKey = id => `dora_calendar:${id}`;
+  function getCalendarState(id) {
+    try { return localStorage.getItem(calendarKey(id)); } catch { return null; }
+  }
+  function setCalendarState(id, value) {
+    try {
+      if (value) localStorage.setItem(calendarKey(id), value);
+      else localStorage.removeItem(calendarKey(id));
+    } catch { /* storage unavailable: auto-add just won't survive a reload */ }
+  }
+
+  // Adds the confirmed appointment: directly via the backend calendar endpoint when it exists,
+  // otherwise by handing the page an .ics file. Never adds an unconfirmed appointment.
+  async function addToCalendar(id) {
+    const path = casePath(id);
+    const current = await request(path);
+    if (current.status !== "scheduled" || !current.appointment) {
+      throw new ToolError("not_confirmed", "The appointment isn't confirmed yet, so I can't add it to your calendar.");
+    }
+    const label = labelSlot(current.appointment);
+    const done = getCalendarState(current.case_id);
+    if (done?.startsWith("added:")) return { method: done.slice(6), appointment: label, already_added: true };
+    let result;
+    try {
+      const created = await request(path + "/calendar-event", "POST", {});
+      result = { method: "calendar", provider: created.provider ?? "calendar", appointment: label };
+      notify(onCalendarAdded, { label, provider: result.provider });
+    } catch (error) {
+      if (!["not_found", "invalid_state", "invalid_input", "backend_unreachable"].includes(error.code)) throw error;
+      const { context } = await loadContext();
+      const ics = buildIcs({
+        uid: current.case_id,
+        start: current.appointment.start,
+        end: current.appointment.end,
+        summary: `Heating repair - ${context.partner.name}`,
+        location: context.building.address,
+        description: `Maintenance case ${current.case_id}. Arranged by DORA.`,
+      });
+      const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
+      notify(onCalendarFile, { url, filename: `heating-repair-${current.case_id}.ics`, label });
+      result = { method: "ics_download", appointment: label };
+    }
+    setCalendarState(current.case_id, `added:${result.method}`);
+    return result;
+  }
+
+  // After dispatch: if the tenant agreed to auto-add, poll the case and add it the moment the partner accepts.
+  // Runs in the page, independent of the voice session.
+  const watchers = new Map();
+  function watchForConfirmation(id) {
+    if (!id || watchers.has(id) || getCalendarState(id) !== "auto") return;
+    const timer = setInterval(async () => {
+      try {
+        const current = await request(casePath(id));
+        if (["needs_attention", "completed"].includes(current.status) && !current.appointment) {
+          clearInterval(timer); watchers.delete(id); return;
+        }
+        if (current.status !== "scheduled" && current.status !== "in_progress" && current.status !== "completed") return;
+        clearInterval(timer); watchers.delete(id);
+        const result = await addToCalendar(id);
+        notify(onToolEvent, { name: "auto_add_to_calendar", params: {}, result: { ok: true, ...result } });
+      } catch (error) {
+        if (error?.code === "not_found") { clearInterval(timer); watchers.delete(id); }
+      }
+    }, WATCH_INTERVAL_MS);
+    watchers.set(id, timer);
+  }
+  // Resume after a page reload.
+  try { const resume = localStorage.getItem(caseKey); if (resume) watchForConfirmation(resume); } catch { /* ignore */ }
+
   function tool(name, run) {
     return async (params = {}) => {
       let result;
@@ -195,7 +270,7 @@ export function createDoraVoice({ agentId, apiBase = "", onStatus, onMessage, on
     }),
 
     save_availability_and_consent: tool("save_availability_and_consent", async ({
-      window_ids, booking_authorized, data_sharing_consent,
+      window_ids, booking_authorized, data_sharing_consent, add_to_calendar,
     }) => {
       const path = casePath();
       if (booking_authorized !== true || data_sharing_consent !== true) {
@@ -215,7 +290,9 @@ export function createDoraVoice({ agentId, apiBase = "", onStatus, onMessage, on
       const { case_id, status } = await request(path + "/availability", "POST", {
         available_slots: slots, booking_authorized: true, data_sharing_consent: true,
       });
-      return { case_id, status, authorized_windows: slots.map(labelSlot) };
+      const autoAdd = add_to_calendar === true;
+      setCalendarState(case_id, autoAdd ? "auto" : null);
+      return { case_id, status, authorized_windows: slots.map(labelSlot), calendar_auto_add: autoAdd };
     }),
 
     propose_times_from_calendar: tool("propose_times_from_calendar", async () => {
@@ -241,37 +318,11 @@ export function createDoraVoice({ agentId, apiBase = "", onStatus, onMessage, on
 
     dispatch_to_partner: tool("dispatch_to_partner", async () => {
       const { case_id, status } = await request(casePath() + "/dispatch", "POST");
+      watchForConfirmation(case_id);
       return { case_id, status, confirmed: false };
     }),
 
-    add_appointment_to_calendar: tool("add_appointment_to_calendar", async () => {
-      const path = casePath();
-      const current = await request(path);
-      if (current.status !== "scheduled" || !current.appointment) {
-        throw new ToolError("not_confirmed", "The appointment isn't confirmed yet, so I can't add it to your calendar.");
-      }
-      const label = labelSlot(current.appointment);
-      // Preferred: the calendar owner's backend writes the event into the tenant's connected calendar.
-      try {
-        const created = await request(path + "/calendar-event", "POST", {});
-        return { method: "calendar", provider: created.provider ?? "calendar", appointment: label };
-      } catch (error) {
-        if (!["not_found", "invalid_state", "invalid_input", "backend_unreachable"].includes(error.code)) throw error;
-      }
-      // Fallback until that endpoint exists: hand the page a standard .ics file the tenant adds with one click.
-      const { context } = await loadContext();
-      const ics = buildIcs({
-        uid: current.case_id,
-        start: current.appointment.start,
-        end: current.appointment.end,
-        summary: `Heating repair - ${context.partner.name}`,
-        location: context.building.address,
-        description: `Maintenance case ${current.case_id}. Arranged by DORA.`,
-      });
-      const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
-      notify(onCalendarFile, { url, filename: `heating-repair-${current.case_id}.ics`, label });
-      return { method: "ics_download", appointment: label };
-    }),
+    add_appointment_to_calendar: tool("add_appointment_to_calendar", async () => addToCalendar(currentCaseId())),
 
     get_case_status: tool("get_case_status", async () => {
       const { case_id, status, appointment, service_report } = await request(casePath());

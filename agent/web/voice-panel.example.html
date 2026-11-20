@@ -67,6 +67,11 @@
       }
     },
     onError: message => { errorLine.textContent = message; },
+    onCalendarAdded: ({ label }) => {
+      const box = panel.querySelector("[data-calendar]");
+      box.textContent = `✅ Added to your calendar: ${label}`;
+      box.hidden = false;
+    },
     onCalendarFile: ({ url, filename, label }) => {
       const link = panel.querySelector("[data-calendar-link]");
       link.href = url;
