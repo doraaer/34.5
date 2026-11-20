@@ -276,6 +276,10 @@ export function createDoraVoice({
       if (booking_authorized !== true || data_sharing_consent !== true) {
         throw new ToolError("consent_missing", "I need your permission to book and share the repair details.");
       }
+      if (typeof add_to_calendar !== "boolean") {
+        throw new ToolError("calendar_question_missing",
+          "Nothing saved yet. First ask the tenant: \"Should I put it in your calendar automatically once they confirm?\", then call this tool again with add_to_calendar true or false.");
+      }
       if (!Array.isArray(window_ids) || window_ids.length === 0) {
         throw new ToolError("invalid_input", "Please choose at least one offered appointment window.");
       }
