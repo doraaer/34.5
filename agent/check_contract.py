@@ -14,6 +14,7 @@ EXPECTED_TOOLS = {
     "save_availability_and_consent": {
         "window_ids", "booking_authorized", "data_sharing_consent",
     },
+    "propose_times_from_calendar": set(),
     "dispatch_to_partner": set(),
     "get_case_status": set(),
 }
@@ -132,6 +133,23 @@ def duplicate_dispatch(client):
     assert [job["partner_job_id"] for job in jobs if job["case_id"] == case["case_id"]] == [first]
 
 
+def calendar_proposal(client):
+    """Valid before and after Person 3 ships the endpoint (agent/CALENDAR-CONTRACT-PROPOSAL.md)."""
+    path = create_case(client)
+    response = client.post(path + "/calendar-proposal", headers=JSON_HEADERS, json={})
+    if response.status_code in (404, 405, 409):
+        print("     (calendar endpoint not available: voice falls back to partner windows)")
+        return
+    assert response.status_code == 200, f"unexpected {response.status_code}: {response.text}"
+    proposals = response.json()["proposals"]
+    windows = request(client, "GET", "/api/context")["partner"]["availability"]
+    parse = datetime.fromisoformat
+    for slot in proposals:
+        assert parse(slot["start"]).tzinfo and parse(slot["end"]) > parse(slot["start"]), slot
+        assert any(parse(w["start"]) <= parse(slot["start"]) and parse(slot["end"]) <= parse(w["end"])
+                   for w in windows), f"proposal outside partner windows: {slot}"
+
+
 def run_check(name, check, *args):
     try:
         check(*args)
@@ -157,6 +175,7 @@ def main():
                         ("Consent missing and empty availability", consent_missing),
                         ("Partner rejects", partner_rejects),
                         ("Duplicate dispatch", duplicate_dispatch),
+                        ("Calendar proposal contract", calendar_proposal),
                     ]:
                         results.append(run_check(name, check, client))
     except Exception as error:

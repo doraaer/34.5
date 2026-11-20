@@ -2,6 +2,7 @@ import { Conversation } from "https://cdn.jsdelivr.net/npm/@elevenlabs/client@1.
 
 const caseKey = "dora_case_id";
 const windowsByApi = new Map();
+const proposalsByApi = new Map();
 const berlinDate = new Intl.DateTimeFormat("en-GB", {
   timeZone: "Europe/Berlin", weekday: "long", day: "numeric", month: "long",
 });
@@ -167,8 +168,9 @@ export function createDoraVoice({ agentId, apiBase = "", onStatus, onMessage, on
       }
       let windows = windowsByApi.get(base);
       if (!windows?.size) ({ windows } = await loadContext());
+      const proposals = proposalsByApi.get(base) ?? new Map();
       const slots = window_ids.map(id => {
-        const slot = windows.get(id);
+        const slot = windows.get(id) ?? proposals.get(id);
         if (!slot) throw new ToolError("unknown_window", "Please choose one of the offered appointment windows.");
         return slot;
       });
@@ -176,6 +178,27 @@ export function createDoraVoice({ agentId, apiBase = "", onStatus, onMessage, on
         available_slots: slots, booking_authorized: true, data_sharing_consent: true,
       });
       return { case_id, status, authorized_windows: slots.map(labelSlot) };
+    }),
+
+    propose_times_from_calendar: tool("propose_times_from_calendar", async () => {
+      const path = casePath();
+      let data;
+      try {
+        data = await request(path + "/calendar-proposal", "POST", {});
+      } catch (error) {
+        // 404 (endpoint not deployed yet / no case) and 409 (calendar not connected) mean:
+        // fall back to the partner windows. Anything else is reported the same way.
+        throw new ToolError("calendar_unavailable",
+          "I can't read your calendar right now, so let me offer the available times instead.");
+      }
+      const proposals = new Map((data.proposals ?? []).slice(0, 3).map(({ start, end }, index) => [
+        `P${index + 1}`, { start, end },
+      ]));
+      proposalsByApi.set(base, proposals);
+      return {
+        source: data.source ?? "calendar",
+        proposals: Array.from(proposals, ([proposal_id, slot]) => ({ proposal_id, label: labelSlot(slot), ...slot })),
+      };
     }),
 
     dispatch_to_partner: tool("dispatch_to_partner", async () => {
