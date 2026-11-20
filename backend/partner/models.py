@@ -1,0 +1,20 @@
+from typing import Literal
+from pydantic import BaseModel
+from backend.core.models import Slot, ServiceReport, Invoice
+
+class CreatePartnerJob(BaseModel):
+    case_id: str
+    service_type: Literal["heating_repair"]
+    description: str
+    location: str
+    available_slots: list[Slot]
+
+class AcceptJob(BaseModel):
+    slot: Slot
+
+class CompleteJob(BaseModel):
+    service_report: ServiceReport
+    invoice: Invoice
+
+class RejectJob(BaseModel):
+    reason: str

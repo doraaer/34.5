@@ -1,0 +1,9 @@
+{
+  "platform": "ElevenLabs Conversational AI",
+  "agent_name": "DORA",
+  "language": "en",
+  "agent_id_env": "ELEVENLABS_AGENT_ID",
+  "prompt_file": "agent/system-prompt.md",
+  "tool_definitions_file": "agent/tool-definitions.example.json",
+  "integration_status": "not_configured"
+}

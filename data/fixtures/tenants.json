@@ -1,0 +1,8 @@
+[
+  {
+    "tenant_id": "TENANT-001",
+    "name": "Lena Demo",
+    "unit_id": "UNIT-102",
+    "email": "lena@example.invalid"
+  }
+]

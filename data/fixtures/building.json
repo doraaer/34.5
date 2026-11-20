@@ -1,0 +1,27 @@
+{
+  "building_id": "BUILDING-001",
+  "address": "Musterstrasse 12, Düsseldorf, Germany",
+  "heating_type": "gas central heating",
+  "units": [
+    {
+      "unit_id": "UNIT-101"
+    },
+    {
+      "unit_id": "UNIT-102"
+    },
+    {
+      "unit_id": "UNIT-103"
+    },
+    {
+      "unit_id": "UNIT-104"
+    },
+    {
+      "unit_id": "UNIT-105"
+    },
+    {
+      "unit_id": "UNIT-106"
+    }
+  ],
+  "service_partner_id": "SHK-001",
+  "owner_id": "OWNER-001"
+}

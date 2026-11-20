@@ -1,0 +1,15 @@
+{
+  "partner_id": "SHK-001",
+  "name": "Demo SHK Services (Fictional)",
+  "service_type": "heating_repair",
+  "availability": [
+    {
+      "start": "2026-11-23T14:00:00+01:00",
+      "end": "2026-11-23T17:00:00+01:00"
+    },
+    {
+      "start": "2026-11-24T09:00:00+01:00",
+      "end": "2026-11-24T12:00:00+01:00"
+    }
+  ]
+}

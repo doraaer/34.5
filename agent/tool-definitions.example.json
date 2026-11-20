@@ -1,0 +1,38 @@
+[
+  {
+    "name": "get_context",
+    "method": "GET",
+    "path": "/api/context"
+  },
+  {
+    "name": "create_case",
+    "method": "POST",
+    "path": "/api/cases",
+    "body": {
+      "description": "string",
+      "priority": "routine"
+    }
+  },
+  {
+    "name": "save_availability",
+    "method": "POST",
+    "path": "/api/cases/{case_id}/availability",
+    "body": {
+      "available_slots": [
+        "Slot(start,end)"
+      ],
+      "booking_authorized": true,
+      "data_sharing_consent": true
+    }
+  },
+  {
+    "name": "dispatch_case",
+    "method": "POST",
+    "path": "/api/cases/{case_id}/dispatch"
+  },
+  {
+    "name": "get_case_status",
+    "method": "GET",
+    "path": "/api/cases/{case_id}"
+  }
+]

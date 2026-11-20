@@ -1,0 +1,10 @@
+{
+  "name": "DORA - Partner Dispatch (TEMPLATE, NOT LIVE)",
+  "nodes": [],
+  "connections": {},
+  "active": false,
+  "settings": {},
+  "meta": {
+    "note": "Implement in n8n and replace with tested export. Do not claim this template is live."
+  }
+}
