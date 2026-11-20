@@ -15,6 +15,7 @@ EXPECTED_TOOLS = {
         "window_ids", "booking_authorized", "data_sharing_consent",
     },
     "propose_times_from_calendar": set(),
+    "add_appointment_to_calendar": set(),
     "dispatch_to_partner": set(),
     "get_case_status": set(),
 }

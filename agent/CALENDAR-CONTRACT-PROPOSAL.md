@@ -37,6 +37,22 @@ Called by DORA only after the tenant said yes to "May I check your calendar?".
 - The endpoint returns only free slots, never event titles, attendees or other calendar content.
 - Calendar access is read-only free/busy. DORA asks for consent before calling it.
 
+## Endpoint 2: add the confirmed appointment to the tenant's calendar
+```
+POST /api/cases/{case_id}/calendar-event
+Body: {}
+```
+Called by DORA only when the case is `scheduled` and the tenant said yes to adding it.
+
+- 200 `{"event_id": "abc123", "provider": "google_calendar"}`: event created for exactly `case.appointment` (1 hour),
+  title "Heating repair - <partner name>", location = building address. Idempotent: calling twice returns the same event.
+- 409 when the case is not `scheduled` or no calendar is connected; 404 unknown case; 502 provider failure.
+- Until this exists, DORA's browser code offers the tenant a standard `.ics` "Add to calendar" file instead.
+
+## Appointment length
+Appointments are **1 hour**. DORA splits the partner's availability windows into 1-hour slots and the tenant authorizes
+exactly the hour(s) they agree to; the partner page accepts the authorized hour. Calendar proposals should also be 1 hour.
+
 ## What happens after
 The tenant approves a proposal; DORA calls the existing `POST /api/cases/{case_id}/availability` with exactly that slot,
 `booking_authorized: true`, `data_sharing_consent: true`. Dispatch and partner acceptance are unchanged.

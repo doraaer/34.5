@@ -18,6 +18,7 @@
   <button type="button" data-talk>Start talking</button>
   <p role="status" data-voice-status>Voice is ready to start.</p>
   <p role="alert" data-voice-error></p>
+  <p data-calendar hidden><a data-calendar-link download>📅 Add appointment to your calendar</a></p>
   <h3>Transcript</h3>
   <ul data-transcript></ul>
   <h3>Tool events</h3>
@@ -66,6 +67,13 @@
       }
     },
     onError: message => { errorLine.textContent = message; },
+    onCalendarFile: ({ url, filename, label }) => {
+      const link = panel.querySelector("[data-calendar-link]");
+      link.href = url;
+      link.download = filename;
+      link.textContent = `📅 Add to your calendar: ${label}`;
+      panel.querySelector("[data-calendar]").hidden = false;
+    },
   };
 
   button.addEventListener("click", async () => {

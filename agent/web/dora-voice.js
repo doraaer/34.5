@@ -1,6 +1,9 @@
 import { Conversation } from "https://cdn.jsdelivr.net/npm/@elevenlabs/client@1.35.0/+esm";
 
 const caseKey = "dora_case_id";
+// Appointments are offered as 1-hour slots carved out of the partner's longer windows.
+const SLOT_MINUTES = 60;
+const MAX_SLOTS = 12;
 const windowsByApi = new Map();
 const proposalsByApi = new Map();
 const berlinDate = new Intl.DateTimeFormat("en-GB", {
@@ -27,6 +30,33 @@ function labelSlot({ start, end }) {
   return `${startDate}, ${berlinTime.format(from)} to ${endLabel}`;
 }
 
+// Keep the partner's original UTC offset (e.g. +01:00) so the backend's slot checks compare like with like.
+function isoWithOffset(reference, epochMs) {
+  const offset = /([+-]\d{2}:\d{2}|Z)$/.exec(reference)?.[1] ?? "Z";
+  const sign = offset === "Z" ? 0 : (offset[0] === "-" ? -1 : 1);
+  const minutes = offset === "Z" ? 0 : sign * (Number(offset.slice(1, 3)) * 60 + Number(offset.slice(4, 6)));
+  const local = new Date(epochMs + minutes * 60000).toISOString().slice(0, 19);
+  return local + (offset === "Z" ? "Z" : offset);
+}
+
+function icsStamp(iso) {
+  return new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+}
+
+function icsEscape(text) {
+  return String(text).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+}
+
+function buildIcs({ uid, start, end, summary, location, description }) {
+  return [
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//DORA//Team 34.5//EN", "BEGIN:VEVENT",
+    `UID:${uid}@dora.demo`, `DTSTAMP:${icsStamp(new Date().toISOString())}`,
+    `DTSTART:${icsStamp(start)}`, `DTEND:${icsStamp(end)}`,
+    `SUMMARY:${icsEscape(summary)}`, `LOCATION:${icsEscape(location)}`, `DESCRIPTION:${icsEscape(description)}`,
+    "END:VEVENT", "END:VCALENDAR", "",
+  ].join("\r\n");
+}
+
 class ToolError extends Error {
   constructor(code, message) {
     super(message);
@@ -43,7 +73,7 @@ function notify(callback, value) {
   }
 }
 
-export function createDoraVoice({ agentId, apiBase = "", onStatus, onMessage, onToolEvent, onError }) {
+export function createDoraVoice({ agentId, apiBase = "", onStatus, onMessage, onToolEvent, onError, onCalendarFile }) {
   const base = apiBase.replace(/\/+$/, "");
   let memoryCaseId = null;
   let storageAvailable = true;
@@ -100,9 +130,17 @@ export function createDoraVoice({ agentId, apiBase = "", onStatus, onMessage, on
 
   async function loadContext() {
     const context = await request("/api/context");
-    const windows = new Map(context.partner.availability.map(({ start, end }, index) => [
-      `W${index + 1}`, { start, end },
-    ]));
+    const windows = new Map();
+    for (const { start, end } of context.partner.availability) {
+      const last = new Date(end).getTime();
+      for (let t = new Date(start).getTime(); t + SLOT_MINUTES * 60000 <= last; t += SLOT_MINUTES * 60000) {
+        if (windows.size >= MAX_SLOTS) break;
+        windows.set(`W${windows.size + 1}`, {
+          start: isoWithOffset(start, t),
+          end: isoWithOffset(start, t + SLOT_MINUTES * 60000),
+        });
+      }
+    }
     windowsByApi.set(base, windows);
     return { context, windows };
   }
@@ -204,6 +242,35 @@ export function createDoraVoice({ agentId, apiBase = "", onStatus, onMessage, on
     dispatch_to_partner: tool("dispatch_to_partner", async () => {
       const { case_id, status } = await request(casePath() + "/dispatch", "POST");
       return { case_id, status, confirmed: false };
+    }),
+
+    add_appointment_to_calendar: tool("add_appointment_to_calendar", async () => {
+      const path = casePath();
+      const current = await request(path);
+      if (current.status !== "scheduled" || !current.appointment) {
+        throw new ToolError("not_confirmed", "The appointment isn't confirmed yet, so I can't add it to your calendar.");
+      }
+      const label = labelSlot(current.appointment);
+      // Preferred: the calendar owner's backend writes the event into the tenant's connected calendar.
+      try {
+        const created = await request(path + "/calendar-event", "POST", {});
+        return { method: "calendar", provider: created.provider ?? "calendar", appointment: label };
+      } catch (error) {
+        if (!["not_found", "invalid_state", "invalid_input", "backend_unreachable"].includes(error.code)) throw error;
+      }
+      // Fallback until that endpoint exists: hand the page a standard .ics file the tenant adds with one click.
+      const { context } = await loadContext();
+      const ics = buildIcs({
+        uid: current.case_id,
+        start: current.appointment.start,
+        end: current.appointment.end,
+        summary: `Heating repair - ${context.partner.name}`,
+        location: context.building.address,
+        description: `Maintenance case ${current.case_id}. Arranged by DORA.`,
+      });
+      const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
+      notify(onCalendarFile, { url, filename: `heating-repair-${current.case_id}.ics`, label });
+      return { method: "ics_download", appointment: label };
     }),
 
     get_case_status: tool("get_case_status", async () => {

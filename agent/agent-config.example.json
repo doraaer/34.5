@@ -8,7 +8,9 @@
   "llm": "deepseek-v41-flash (ElevenLabs default at creation; revisit if tool calling is unreliable)",
   "voice_id": "XJVfsOvSwUXluggMM5Jj (Stephanie v2 - confident, clear, calm; female)",
   "tts": { "model_id": "eleven_v4_turbo", "stability": 0.75, "similarity_boost": 0.8, "speed": 1.0, "expressive_mode": false },
-  "first_message": "Hi, this is DORA, the AI assistant from your property management. Give me a second to pull up your apartment.",
+  "first_message": "Hi there, it's DORA from your property management! Just pulling up your apartment...",
+  "temperature": 0.4,
+  "appointment_length_minutes": 60,
   "prompt_file": "agent/system-prompt.md",
   "tools_file": "agent/tools.json",
   "tool_type": "client (executed in the browser by agent/web/dora-voice.js, calling the local FastAPI)",
@@ -17,9 +19,10 @@
     "create_maintenance_case": "tool_2301m7xeypccf1v9y8fm42a0peyq",
     "save_availability_and_consent": "tool_1201m7xeyq36fm2t94jjavetv65r",
     "propose_times_from_calendar": "tool_5101m7xfdzt7e1faqc0yfpshgpwa",
+    "add_appointment_to_calendar": "tool_2001m7xg7bntey8rs805a4ga26pq",
     "dispatch_to_partner": "tool_1201m7xeyqtpebcs23h3bxk8fv3d",
     "get_case_status": "tool_3901m7xeyrh5ehma9qm8ngq39sfv"
   },
   "timezone": "Europe/Berlin",
-  "integration_status": "agent live with 6 client tools; browser client in agent/web; calendar endpoint pending Person 3 (agent/CALENDAR-CONTRACT-PROPOSAL.md)"
+  "integration_status": "agent live with 7 client tools; browser client in agent/web; calendar endpoint pending Person 3 (agent/CALENDAR-CONTRACT-PROPOSAL.md)"
 }

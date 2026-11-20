@@ -16,8 +16,10 @@
         "heating_type": "gas central heating",
         "partner_name": "Demo SHK Services (Fictional)",
         "windows": [
-          { "window_id": "W1", "label": "Monday 23 November, 14:00 to 17:00", "start": "2026-11-23T14:00:00+01:00", "end": "2026-11-23T17:00:00+01:00" }
+          { "window_id": "W1", "label": "Monday 23 November, 14:00 to 15:00", "start": "2026-11-23T14:00:00+01:00", "end": "2026-11-23T15:00:00+01:00" },
+          { "window_id": "W2", "label": "Monday 23 November, 15:00 to 16:00", "start": "2026-11-23T15:00:00+01:00", "end": "2026-11-23T16:00:00+01:00" }
         ],
+        "_windows_note": "1-hour appointment slots carved from the partner's availability windows, earliest first.",
         "open_case": { "case_id": "CASE-1234ABCD", "status": "awaiting_partner" }
       }
     },
@@ -81,6 +83,16 @@
     },
     {
       "type": "client",
+      "name": "add_appointment_to_calendar",
+      "description": "Only when get_case_status shows the appointment is confirmed (status scheduled) and the tenant said yes to adding it: put the confirmed appointment in the tenant's calendar. method 'calendar' means it was added directly; method 'ics_download' means an 'Add to calendar' button is now shown on the tenant's page.",
+      "expects_response": true,
+      "response_timeout_secs": 20,
+      "parameters": { "type": "object", "properties": {}, "required": [] },
+      "returns": { "ok": true, "method": "calendar", "provider": "google_calendar", "appointment": "Monday 23 November, 15:00 to 16:00" },
+      "backend": "POST /api/cases/{case_id}/calendar-event (proposed in agent/CALENDAR-CONTRACT-PROPOSAL.md); if unavailable, the browser offers an .ics file instead"
+    },
+    {
+      "type": "client",
       "name": "get_case_status",
       "description": "Read the current case status from Centrix. Only claim an appointment is booked when status is scheduled and appointment is present.",
       "expects_response": true,
@@ -91,7 +103,7 @@
   ],
   "error_return": {
     "ok": false,
-    "error": "Short machine-readable code, e.g. backend_unreachable, not_found, invalid_state, consent_missing, unknown_window, no_current_case, calendar_unavailable",
+    "error": "Short machine-readable code, e.g. backend_unreachable, not_found, invalid_state, consent_missing, unknown_window, no_current_case, calendar_unavailable, not_confirmed",
     "message": "One sentence the agent can relay to the tenant. Never implies success."
   },
   "browser_state": {
