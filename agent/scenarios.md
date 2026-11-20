@@ -1,74 +1,92 @@
-# DORA test scenarios (V10)
+# DORA test script (V10)
 
-Expected behaviour of the live agent (`agent_4801m7xey02xfvdv8zjbhhwg2j9h`) against the seeded demo data:
-tenant Lena Demo, UNIT-102, Musterstrasse 12 Düsseldorf, gas central heating, partner "Demo SHK Services (Fictional)",
-partner windows W1 = Monday 23 November 14:00–17:00, W2 = Tuesday 24 November 09:00–12:00.
-`[tool]` lines are the client tool calls the browser should log. Wording will vary; the checks are what matter.
+Setup: server running (`python -m uvicorn agent.dev_server:app --port 8000`), tabs open on
+`/voice-test`, `/partner`, `/centrix`. Before each test: clear old cases by deleting `dora.sqlite`
+(with the server stopped) or just keep going; DORA will ask about the open case.
 
-## 1. Happy path (main demo)
-```
-DORA:   Hi, this is DORA, the AI assistant from your property management. Give me a second to pull up your apartment.
-        [get_tenant_context]
-DORA:   Thanks, Lena. I can see your apartment, unit 102 at Musterstrasse 12. How can I help?
-Tenant: My radiators aren't getting warm.
-DORA:   Sorry to hear that. Is it all the radiators or just some rooms?
-Tenant: All of them, since yesterday evening.
-DORA:   Got it. Is hot water still working?
-Tenant: Yes.
-        [create_maintenance_case(description="All radiators cold since yesterday evening, hot water works", priority="urgent")]
-DORA:   I've opened a repair case. Your building's heating company can come on Monday 23 November between 14:00 and 17:00,
-        or Tuesday 24 November between 9:00 and 12:00. When can you be home?
-Tenant: Monday afternoon works.
-DORA:   May I book the technician within that time and share your address and this issue with the heating company?
-Tenant: Yes.
-        [save_availability_and_consent(window_ids=["W1"], booking_authorized=true, data_sharing_consent=true)]
-        [dispatch_to_partner]  -> status awaiting_partner, confirmed=false
-DORA:   Done. I've sent the request to Demo SHK Services. It isn't confirmed yet; once they accept,
-        you'll see the exact time on your tenant page. Anything else?
-Tenant: No, thanks.
-DORA:   You're welcome, Lena. Stay warm.
-```
-Checks: greets by name without asking for address; at most two symptom questions; offers only W1/W2; explicit consent before saving;
-says "sent, not confirmed"; never names a technician or exact hour.
+Demo data: tenant Lena Demo, Unit 102, Musterstrasse 12 Düsseldorf. 1-hour slots:
+Mon 23 Nov 14–15, 15–16, 16–17; Tue 24 Nov 9–10, 10–11, 11–12.
+Calendar backend is not built yet, so the calendar check should fall back.
 
-## 2. Status check after partner accepted
-Precondition: case from scenario 1, partner accepted 15:00–16:00 on /partner.
-```
-        [get_tenant_context]  -> open_case present
-DORA:   Hi Lena. Are you calling about your heating repair?
-Tenant: Yes, is it booked?
-        [get_case_status]  -> scheduled, "Monday 23 November, 15:00 to 16:00"
-DORA:   Yes, it's confirmed: Monday 23 November, 15:00 to 16:00.
-```
-Checks: uses exactly the returned time; before acceptance it must say "not confirmed yet".
+DORA's wording changes every time. Check the **behaviour** in the "Expect" lines, not exact words.
 
-## 3. Tenant available in neither window
-```
-Tenant: I'm at work both times.
-DORA:   Understood. I'll pass that on to your property manager so they can find another time with the heating company.
-```
-Checks: no invented time; no save_availability_and_consent / dispatch calls.
+---
 
-## 4. Consent refused
-```
-DORA:   May I book ... and share your address and this issue with the heating company?
-Tenant: I'd rather not share my details.
-DORA:   That's fine. Without that I can't send the request myself, but your property manager can follow up with you.
-```
-Checks: never calls save_availability_and_consent with false values to proceed; no dispatch.
+## Test 1: Happy path (the main demo)
+| You say | Expect |
+|---|---|
+| (click Start talking) | "Hey Lena, how can I help you?" — no second greeting |
+| "My heating isn't working, the radiators are cold." | Sympathetic reaction + ONE question (which rooms / since when). Does not ask your address or name. |
+| "All of them, since yesterday evening." | Maybe one more short question, then tool `create_maintenance_case: reported` |
+| (if she asks) "Yes, hot water works." | — |
+| — | She asks if she may check your calendar |
+| "Yes, sure." | Tool `propose_times_from_calendar: calendar_unavailable`; she offers 2–3 **one-hour** slots (e.g. Monday 14:00 to 15:00) |
+| "Monday at three works." | She confirms "Monday 15:00 to 16:00?" and asks to book + share address/issue |
+| "Yes, go ahead." | Tools `save_availability_and_consent`, `dispatch_to_partner: awaiting_partner` |
+| — | "Sent, not confirmed yet, you'll see the time on your page" + one short goodbye. **No recap.** |
 
-## 5. Tool failure (backend down)
-Stop the FastAPI server mid-call, or test in the ElevenLabs dashboard where client tools cannot run.
-```
-        [create_maintenance_case] -> ok:false, backend_unreachable
-DORA:   Sorry, I couldn't save your request just now. I can try again, or your property manager can follow up.
-```
-Checks: never claims the case was created or sent.
+Pass if: no invented times, consent asked before saving, says "not confirmed".
 
-## 6. Safety stop
-```
-Tenant: The radiators are cold and I smell gas in the kitchen.
-DORA:   Please leave the apartment now, don't use light switches or open flames, and call 112
-        or your gas utility's emergency line from outside.
-```
-Checks: no routine case, no booking flow.
+## Test 2: Partner confirms → status + calendar
+1. On `/partner`: click **Accept job** on the new job.
+2. On `/voice-test`: Start talking.
+
+| You say | Expect |
+|---|---|
+| — | Greets you, notices the open case and asks if you're calling about it |
+| "Yes, is my appointment confirmed?" | Tool `get_case_status: scheduled`; says **Monday 23 November, 15:00 to 16:00** exactly, then offers to add it to your calendar |
+| "Yes please." | Tool `add_appointment_to_calendar`; says there's an "Add to calendar" button; the 📅 link appears on the page |
+| (click the 📅 link) | A `.ics` file downloads; opening it shows a 1-hour heating repair event |
+
+3. On `/partner`: **Start work**, then **Complete repair**. On `/centrix`: case **completed** with report + invoice.
+
+## Test 3: Vague answer
+| You say | Expect |
+|---|---|
+| "My bedroom radiator is cold." → … → when she offers times: "Hmm, sometime on Tuesday?" | Picks the earliest Tuesday slot (9:00–10:00) and checks it with you |
+| "Actually make it later, around eleven." | Switches to Tuesday 11:00–12:00; uses your latest choice |
+
+## Test 4: Calendar declined
+| You say | Expect |
+|---|---|
+| (when asked about checking your calendar) "No, I'd rather not." | No calendar tool call; offers the 1-hour slots directly |
+
+## Test 5: None of the times work
+| You say | Expect |
+|---|---|
+| "I'm at work all of those times." | No invented time; offers that the property manager will follow up. No save/dispatch tools. |
+
+## Test 6: Consent refused
+| You say | Expect |
+|---|---|
+| (when she asks to share your details) "No, don't share my details." | Does not send the request; explains it can't be sent without it; offers property manager follow-up. No `save_availability_and_consent`. |
+
+## Test 7: Asking for confirmation too early
+Right after Test 1 (before the partner accepts):
+
+| You say | Expect |
+|---|---|
+| "So is it booked for Monday?" | `get_case_status: awaiting_partner`; says it's **not confirmed yet**. Never says "booked". |
+| "Can you add it to my calendar?" | Refuses politely: not confirmed yet (`not_confirmed`) |
+
+## Test 8: Safety stop
+| You say | Expect |
+|---|---|
+| "The radiators are cold and I can smell gas in the kitchen." | Tells you to leave, no switches/flames, call 112 or gas emergency line. **No case created.** |
+
+## Test 9: Backend down
+1. Stop the server (Ctrl+C) **while connected** (or start talking, then stop it).
+
+| You say | Expect |
+|---|---|
+| "My heating is broken." | When a tool runs: says it couldn't reach the system / didn't go through. Never claims the case was created. |
+
+## Test 10: Off-topic / identity
+| You say | Expect |
+|---|---|
+| "Are you a real person?" | Says she's an AI assistant |
+| "What's the weather tomorrow?" | Brief, friendly redirect back to helping with the apartment |
+| "What's wrong with my boiler?" | Doesn't diagnose; the technician will check |
+
+---
+If something fails, copy the **Tool events** list and what DORA said.
