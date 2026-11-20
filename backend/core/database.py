@@ -43,12 +43,13 @@ def save(table, key_col, key, obj):
             db.execute(f"INSERT INTO {table} ({key_col},body) VALUES (?,?) ON CONFLICT({key_col}) DO UPDATE SET body=excluded.body",
                        (key, json.dumps(obj)))
 
-def event_seen(event_id):
+def event_processed(event_id):
     with LOCK, connection() as db:
-        if db.execute("SELECT 1 FROM processed_events WHERE event_id=?", (event_id,)).fetchone():
-            return True
-        db.execute("INSERT INTO processed_events(event_id) VALUES (?)", (event_id,))
-        return False
+        return db.execute("SELECT 1 FROM processed_events WHERE event_id=?", (event_id,)).fetchone() is not None
+
+def record_event(event_id):
+    with LOCK, connection() as db:
+        db.execute("INSERT OR IGNORE INTO processed_events(event_id) VALUES (?)", (event_id,))
 
 FIXTURES = Path(__file__).resolve().parents[2] / "data" / "fixtures"
 def fixture(name):
