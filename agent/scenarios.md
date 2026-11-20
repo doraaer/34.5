@@ -16,11 +16,9 @@ DORA's wording changes every time. Check the **behaviour** in the "Expect" lines
 | You say | Expect |
 |---|---|
 | (click Start talking) | "Hey Lena, how can I help you?" — no second greeting |
-| "My heating isn't working, the radiators are cold." | Sympathetic reaction + ONE question (which rooms / since when). Does not ask your address or name. |
-| "All of them, since yesterday evening." | Maybe one more short question, then tool `create_maintenance_case: reported` |
-| (if she asks) "Yes, hot water works." | — |
-| — | She asks if she may check your calendar |
-| "Yes, sure." | Tool `propose_times_from_calendar: calendar_unavailable`; she offers 2–3 **one-hour** slots (e.g. Monday 14:00 to 15:00) |
+| "My heating isn't working, the radiators are cold." | Short sympathetic reaction + at most ONE combined question (which rooms and since when). No old case mentioned, no address/name asked. |
+| "All of them, since yesterday evening." | `create_maintenance_case: reported` without announcing it; asks "check your calendar, or just give you the next slots?" |
+| "Check my calendar." | Tool `propose_times_from_calendar: calendar_unavailable`; she offers 2–3 **one-hour** slots (e.g. Monday 14:00 to 15:00) |
 | "Monday at three works." | She confirms "Monday 15:00 to 16:00?" and asks to book + share address/issue |
 | "Yes, go ahead." | Tools `save_availability_and_consent`, `dispatch_to_partner: awaiting_partner` |
 | — | "Sent, not confirmed yet, you'll see the time on your page" + one short goodbye. **No recap.** |
@@ -33,8 +31,8 @@ Pass if: no invented times, consent asked before saving, says "not confirmed".
 
 | You say | Expect |
 |---|---|
-| — | Greets you, notices the open case and asks if you're calling about it |
-| "Yes, is my appointment confirmed?" | Tool `get_case_status: scheduled`; says **Monday 23 November, 15:00 to 16:00** exactly, then offers to add it to your calendar |
+| — | "Hey Lena, how can I help you?" (does NOT bring up the old case by itself) |
+| "Is my appointment confirmed?" | Tool `get_case_status: scheduled`; says **Monday 23 November, 15:00 to 16:00** exactly, then offers to add it to your calendar |
 | "Yes please." | Tool `add_appointment_to_calendar`; says there's an "Add to calendar" button; the 📅 link appears on the page |
 | (click the 📅 link) | A `.ics` file downloads; opening it shows a 1-hour heating repair event |
 
