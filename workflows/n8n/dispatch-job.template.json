@@ -1,10 +1,279 @@
 {
-  "name": "DORA - Partner Dispatch (TEMPLATE, NOT LIVE)",
-  "nodes": [],
-  "connections": {},
+  "id": "doraDispatch0001",
+  "name": "DORA – Partner Dispatch",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dora-dispatch",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1f0c001-0000-4000-8000-000000000001",
+      "name": "Dispatch Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "5d0ea000-d15b-4a7c-8000-000000000001",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "DORA Internal Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validate the work order sent by the DORA backend. Pure check, no storage.\nconst body = $input.first().json.body ?? {};\nconst isText = (v) => typeof v === 'string' && v.trim() !== '';\nconst missing = [];\nfor (const f of ['case_id', 'description', 'location']) {\n  if (!isText(body[f])) missing.push(f);\n}\nconst slots = Array.isArray(body.available_slots) ? body.available_slots : [];\nconst goodSlots = slots.length > 0 && slots.every((s) => s && isText(s.start) && isText(s.end));\nif (!goodSlots) missing.push('available_slots');\nif (missing.length) {\n  return [{ json: { valid: false, error: 'missing or invalid field(s): ' + missing.join(', ') } }];\n}\n// Partner body = same fields without idempotency_key (partner dedupes on case_id).\nreturn [{ json: { valid: true, partner_request: {\n  case_id: body.case_id,\n  service_type: body.service_type ?? 'heating_repair',\n  description: body.description,\n  location: body.location,\n  available_slots: slots,\n} } }];"
+      },
+      "id": "a1f0c001-0000-4000-8000-000000000002",
+      "name": "Validate Work Order",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c0000001-0000-4000-8000-000000000001",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1f0c001-0000-4000-8000-000000000003",
+      "name": "Is Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": $json.error } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "a1f0c001-0000-4000-8000-000000000004",
+      "name": "Respond 400",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ ($env.DORA_PARTNER_BASE_URL || 'http://127.0.0.1:8000').replace(/\\/$/, '') }}/partner/jobs",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.partner_request) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "a1f0c001-0000-4000-8000-000000000005",
+      "name": "POST Partner Job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        200
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c0000002-0000-4000-8000-000000000001",
+              "leftValue": "={{ $json.partner_job_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "c0000002-0000-4000-8000-000000000002",
+              "leftValue": "={{ $json.case_id }}",
+              "rightValue": "={{ $('Validate Work Order').first().json.partner_request.case_id }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1f0c001-0000-4000-8000-000000000006",
+      "name": "Is Partner Job?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "firstIncomingItem",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "a1f0c001-0000-4000-8000-000000000007",
+      "name": "Respond 200 Partner Job",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\":\"partner unavailable\"}",
+        "options": {
+          "responseCode": 502
+        }
+      },
+      "id": "a1f0c001-0000-4000-8000-000000000008",
+      "name": "Respond 502",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        320
+      ]
+    }
+  ],
+  "connections": {
+    "Dispatch Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Work Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Work Order": {
+      "main": [
+        [
+          {
+            "node": "Is Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Valid?": {
+      "main": [
+        [
+          {
+            "node": "POST Partner Job",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 400",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST Partner Job": {
+      "main": [
+        [
+          {
+            "node": "Is Partner Job?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 502",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Partner Job?": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 Partner Job",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 502",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "versionId": "1a8e647f-e055-4dff-8ce7-8ee2ce4a95a1",
   "active": false,
-  "settings": {},
   "meta": {
-    "note": "Implement in n8n and replace with tested export. Do not claim this template is live."
+    "note": "Exported from n8n 2.48.7 after live testing (see README). Credential id is a placeholder; create the 'DORA Internal Token' Header Auth credential, set its id here or reselect it in the editor, then publish/activate.",
+    "exportedFrom": "n8n 2.48.7"
   }
 }
