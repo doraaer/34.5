@@ -1,25 +1,14 @@
-/* DORA voice controls on the tenant page (Person 2). Matches resident.css colours. */
-#elevenlabs-agent-container { display: grid; justify-items: center; gap: 10px; margin-top: 28px; width: min(100%, 560px); }
-.voice-talk {
-  border: 1px solid #ebc3ff3d; border-radius: 999px; padding: 12px 26px; min-height: 48px;
-  font: inherit; font-weight: 600; cursor: pointer;
-  background: #e9daf4; color: #302638;
-  box-shadow: inset 0 1px #fff6, 0 8px 30px #e1b9ff33;
-  transition: transform .25s, box-shadow .25s, background-color .25s;
-}
-.voice-talk::before { content: "🎙 "; }
-.voice-talk.active { background: transparent; color: #ffefff; border-color: #e3aab1aa; }
-.voice-talk.active::before { content: "■ "; font-size: .8em; }
-.voice-talk:disabled { opacity: .6; cursor: progress; }
-@media (hover:hover) and (prefers-reduced-motion:no-preference) {
-  .voice-talk:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 5px 24px #e1b9ff50; }
-}
+/* DORA voice on the tenant page (Person 2). No extra button: the existing sculpture is the talk control. */
+.voice-sculpture.voice-trigger { cursor: pointer; border-radius: 50%; }
+.voice-sculpture.voice-trigger:focus-visible { outline: 2px solid #f3d8ff; outline-offset: 8px; }
+#elevenlabs-agent-container { display: grid; justify-items: center; gap: 8px; margin-top: 20px; width: min(100%, 560px); }
 #elevenlabs-agent-container .voice-state { margin: 0; color: #e4c6ee; }
 #elevenlabs-agent-container .voice-state.error { color: #ffd6d1; }
 .voice-caption {
   margin: 4px 0 0; min-height: 3em; max-width: 520px; text-align: center;
   color: #fff4ff; font-size: clamp(17px, 2vw, 21px); line-height: 1.45;
 }
+.voice-caption:empty { min-height: 0; }
 .voice-caption.from-user { color: #d9c2e6; font-style: italic; }
 .voice-calendar { margin: 0; padding: 10px 16px; border-radius: 16px; background: #334640; color: #e6fff4; }
 .voice-calendar a { color: #e6fff4; }
