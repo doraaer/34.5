@@ -202,15 +202,10 @@ function incoming(card, job, free) {
 }
 
 function cardFor(job, free) {
-  const urgent = job.priority === "urgent";
-  const card = D.el("section", "", "card" + (urgent ? " urgent" : ""));
+  const card = D.el("section", "", "card");
   const heading = D.el("div", "", "order-heading");
   heading.append(D.el("span", states[job.status] || job.status, "state " + job.status));
-  if (urgent) {
-    const flag = D.el("span", "Urgent", "urgent-flag");
-    flag.title = "The tenant marked this as urgent (no heating or vulnerable people affected)";
-    heading.append(flag);
-  }
+  if (job.priority === "urgent") heading.append(D.el("span", "Urgent", "state urgent"));
   heading.append(D.el("h3", job.description));
   card.append(heading, D.el("p", job.location, "location"));
   if (job.status === "received") incoming(card, job, free);
