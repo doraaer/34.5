@@ -326,3 +326,12 @@ textarea, select, .panel, .request-item { background-color: #fffefa; color: var(
   #requests .text-link:hover {color:white}
   #slot .visit-option:hover {background:#e5c8ef16;border-color:#d9bbe16b}
 }
+
+#dora-app .topbar .brand {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 29px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -.045em;
+  color: #f1e8f4;
+}
