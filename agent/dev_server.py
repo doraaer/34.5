@@ -14,7 +14,13 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, HTMLResponse
 
-from backend.main import app as backend_app
+# Demo default: the simulated tenant calendar is connected unless configured otherwise.
+# Set DORA_CALENDAR_PROVIDER=none to run without a calendar.
+_ROOT = Path(__file__).resolve().parents[1]
+os.environ.setdefault("DORA_CALENDAR_PROVIDER", "fake")
+os.environ.setdefault("DORA_FAKE_CALENDAR_FILE", str(_ROOT / "tests" / "core" / "fixtures" / "fake_calendar_busy.json"))
+
+from backend.main import app as backend_app  # noqa: E402  (env must be set first)
 
 WEB = Path(__file__).resolve().parent / "web"
 CONFIG = Path(__file__).resolve().parent / "agent-config.example.json"

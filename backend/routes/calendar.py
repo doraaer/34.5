@@ -35,8 +35,16 @@ def get_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def partner_windows():
+def partner_shift_windows():
+    """The provider's working windows from the fixture (used for the calendar view's date range)."""
     return merge_intervals(to_interval(w) for w in db.fixture("partner.json")["availability"])
+
+
+def partner_windows():
+    """Windows the provider can still take: working windows minus appointments already booked.
+    Proposals must use these, otherwise DORA offers a time another tenant already has."""
+    from backend.partner.service import available_windows
+    return merge_intervals(to_interval(s.model_dump(mode="json")) for s in available_windows())
 
 
 @router.post("/cases/{case_id}/calendar-proposal")
@@ -85,7 +93,7 @@ def calendar_busy(source_factory: Callable[[], BusyTimeSource] = Depends(get_sou
         raise HTTPException(502, "calendar provider failed")
     if source.source not in SIMULATED_SOURCES:
         raise HTTPException(409, "calendar view is only available for the simulated calendar")
-    windows = partner_windows()
+    windows = partner_shift_windows()
     if not windows:
         return {"source": source.source, "simulated": True, "busy": []}
     first = windows[0].start.astimezone(BERLIN).replace(hour=0, minute=0, second=0, microsecond=0)
@@ -97,3 +105,34 @@ def calendar_busy(source_factory: Callable[[], BusyTimeSource] = Depends(get_sou
         raise HTTPException(502, "calendar provider failed")
     return {"source": source.source, "simulated": True,
             "busy": [b.to_dict() for b in sorted(busy)]}
+
+
+@router.post("/cases/{case_id}/calendar-event")
+def calendar_event(case_id: str,
+                   source_factory: Callable[[], BusyTimeSource] = Depends(get_source_factory)):
+    """Put the CONFIRMED appointment into the tenant's calendar (agent/CALENDAR-CONTRACT-PROPOSAL.md).
+
+    Simulated calendar: the event is recorded on the case; the tenant page's calendar panel shows it.
+    Real calendars (Google) are not written yet: 409, so DORA falls back to an .ics file.
+    Idempotent: calling twice returns the same event.
+    """
+    case = services.require_case(case_id)
+    if case.get("status") not in ("scheduled", "in_progress", "completed") or not case.get("appointment"):
+        raise HTTPException(409, "appointment not confirmed")
+    try:
+        source = source_factory()
+    except CalendarNotConnected:
+        raise HTTPException(409, "calendar not connected")
+    except CalendarProviderError:
+        raise HTTPException(502, "calendar provider failed")
+    if source.source not in SIMULATED_SOURCES:
+        raise HTTPException(409, "writing to this calendar is not supported yet")
+    existing = case.get("calendar_event")
+    if existing and existing.get("start") == case["appointment"]["start"]:
+        return existing
+    event = {"event_id": "SIM-" + case_id, "provider": source.source, "simulated": True,
+             "start": case["appointment"]["start"], "end": case["appointment"]["end"],
+             "title": "Heating repair"}
+    case["calendar_event"] = event
+    db.save("cases", "case_id", case_id, case)
+    return event

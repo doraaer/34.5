@@ -25,7 +25,10 @@ Base: local `http://127.0.0.1:8000`; JSON camel/snake policy: **snake_case**.
 
 ## Planned scheduling
 
-Google and phone calendar connection follow the local core flow. Phone calendar and `calendar-event` (adding the confirmed appointment to the tenant's calendar) are not built yet.
+Google and phone calendar connection follow the local core flow. Phone calendar is not built yet.
+
+- `POST /api/cases/{case_id}/calendar-event` → adds the CONFIRMED appointment (status scheduled/in_progress/completed) to the tenant's calendar. Simulated calendar only: returns `{"event_id":"SIM-<case_id>","provider":"fake_calendar","simulated":true,"start":...,"end":...,"title":"Heating repair"}` and stores it on the case as `calendar_event`; idempotent. 409 if not confirmed, no calendar connected, or a real (Google) calendar (writing not supported yet; DORA then offers an .ics file). 404 unknown case.
+- Calendar proposals only use provider time that is still free (`/partner/availability`: working windows minus booked appointments).
 
 ### Calendar proposal — implemented (Person 3)
 - `POST /api/cases/{case_id}/calendar-proposal` → body `{}` or `{"duration_minutes":60}` (30–240, default 60). Called by DORA only after the tenant agreed to a calendar check.
