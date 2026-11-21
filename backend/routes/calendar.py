@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 from backend.core import database as db, services
 from backend.core.calendar_adapter import (BusyTimeSource, CalendarNotConnected,
                                            CalendarProviderError, source_from_env)
-from backend.core.scheduling import SchedulingError, find_free_slots, merge_intervals, to_interval
+from backend.core.scheduling import BERLIN, SchedulingError, find_free_slots, merge_intervals, to_interval
 
 router = APIRouter(prefix="/api", tags=["Calendar (preparation)"])
 MAX_PROPOSALS = 3
@@ -65,3 +65,35 @@ def calendar_proposal(case_id: str,
     except (CalendarProviderError, SchedulingError):
         raise HTTPException(502, "calendar provider failed")
     return {"proposals": [s.to_dict() for s in slots], "source": source.source}
+
+
+SIMULATED_SOURCES = {"fake_calendar", "spoken_availability"}
+
+
+@router.get("/calendar/busy")
+def calendar_busy(source_factory: Callable[[], BusyTimeSource] = Depends(get_source_factory)):
+    """Busy blocks of the SIMULATED tenant calendar, for the tenant page's demo panel.
+
+    Only start/end, never titles. Covers the whole Berlin days of the partner windows.
+    Real calendars (Google) are not exposed here: 409, like "not connected".
+    """
+    try:
+        source = source_factory()
+    except CalendarNotConnected:
+        raise HTTPException(409, "calendar not connected")
+    except CalendarProviderError:
+        raise HTTPException(502, "calendar provider failed")
+    if source.source not in SIMULATED_SOURCES:
+        raise HTTPException(409, "calendar view is only available for the simulated calendar")
+    windows = partner_windows()
+    if not windows:
+        return {"source": source.source, "simulated": True, "busy": []}
+    first = windows[0].start.astimezone(BERLIN).replace(hour=0, minute=0, second=0, microsecond=0)
+    last = windows[-1].end.astimezone(BERLIN).replace(hour=0, minute=0, second=0, microsecond=0)
+    time_min, time_max = first, last + timedelta(days=1)
+    try:
+        busy = source.busy_intervals(time_min, time_max)
+    except (CalendarProviderError, SchedulingError):
+        raise HTTPException(502, "calendar provider failed")
+    return {"source": source.source, "simulated": True,
+            "busy": [b.to_dict() for b in sorted(busy)]}

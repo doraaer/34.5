@@ -123,3 +123,51 @@ def test_route_is_registered_in_main_app(client, monkeypatch):
     case = client.post("/api/cases", json={"description": "Radiators not heating", "priority": "routine"}).json()
     r = client.post(f"/api/cases/{case['case_id']}/calendar-proposal", json={})
     assert r.status_code == 409 and r.json() == {"detail": "calendar not connected"}
+
+
+# --- GET /api/calendar/busy (simulated calendar view for the tenant page) ---
+
+def test_busy_view_returns_simulated_blocks(app):
+    use_source(app, lambda: FakeBusyTimeSource.from_fixture(FIXTURE))
+    r = TestClient(app).get("/api/calendar/busy")
+    assert r.status_code == 200
+    assert r.json() == {"source": "fake_calendar", "simulated": True, "busy": [
+        {"start": "2026-11-23T13:00:00+01:00", "end": "2026-11-23T15:00:00+01:00"},
+        {"start": "2026-11-23T16:00:00+01:00", "end": "2026-11-23T16:30:00+01:00"},
+        {"start": "2026-11-24T08:00:00+01:00", "end": "2026-11-24T09:30:00+01:00"}]}
+
+
+def test_busy_view_only_covers_partner_window_days(app):
+    blocks = [{"start": "2026-11-22T10:00:00+01:00", "end": "2026-11-22T11:00:00+01:00"},
+              {"start": "2026-11-23T19:00:00+01:00", "end": "2026-11-23T20:00:00+01:00"},
+              {"start": "2026-11-30T10:00:00+01:00", "end": "2026-11-30T11:00:00+01:00"}]
+    use_source(app, lambda: FakeBusyTimeSource(blocks))
+    busy = TestClient(app).get("/api/calendar/busy").json()["busy"]
+    assert busy == [{"start": "2026-11-23T19:00:00+01:00", "end": "2026-11-23T20:00:00+01:00"}]
+
+
+def test_busy_view_not_connected_is_409(app, monkeypatch):
+    monkeypatch.delenv("DORA_CALENDAR_PROVIDER", raising=False)
+    r = TestClient(app).get("/api/calendar/busy")
+    assert r.status_code == 409 and r.json() == {"detail": "calendar not connected"}
+
+
+def test_busy_view_never_exposes_real_google_calendar(app):
+    class Google:
+        source = "google_calendar"
+        def busy_intervals(self, a, b):
+            raise AssertionError("must not read a real calendar for the view")
+    use_source(app, lambda: Google())
+    assert TestClient(app).get("/api/calendar/busy").status_code == 409
+
+
+def test_busy_view_provider_failure_is_502(app):
+    use_source(app, lambda: (_ for _ in ()).throw(CalendarProviderError("bad fixture")))
+    assert TestClient(app).get("/api/calendar/busy").status_code == 502
+
+
+def test_busy_view_registered_in_main_app(client, monkeypatch):
+    monkeypatch.setenv("DORA_CALENDAR_PROVIDER", "fake")
+    monkeypatch.setenv("DORA_FAKE_CALENDAR_FILE", str(FIXTURE))
+    r = client.get("/api/calendar/busy")
+    assert r.status_code == 200 and len(r.json()["busy"]) == 3

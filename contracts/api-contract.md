@@ -36,6 +36,7 @@ Google and phone calendar connection follow the local core flow. Phone calendar 
   - `source` names where the busy time came from: `google_calendar`, or `fake_calendar` for the offline demo fallback.
 - 404 unknown case; 409 `{"detail":"calendar not connected"}` when no calendar is configured or the token is rejected; 502 calendar provider failed.
 - Read-only: the case is not changed. The tenant approves one proposal, then DORA calls `/availability` with exactly that slot. Partner accept/reject is unchanged; a rejection leaves the booking unconfirmed.
+- `GET /api/calendar/busy` → busy blocks of the **simulated** tenant calendar, for the tenant page's demo calendar panel: `{"source":"fake_calendar","simulated":true,"busy":[{"start":"2026-11-23T13:00:00+01:00","end":"2026-11-23T15:00:00+01:00"}]}`. Covers the whole Berlin days of the partner windows, start/end only, sorted. 409 `{"detail":"calendar not connected"}` when no calendar is configured; also 409 when the provider is a real calendar (Google is never exposed here); 502 bad fixture.
 - One calendar per server (env `DORA_CALENDAR_PROVIDER=google|fake`, `DORA_GOOGLE_CALENDAR_ACCESS_TOKEN`, `DORA_GOOGLE_CALENDAR_ID`, `DORA_FAKE_CALENDAR_FILE`), not per tenant. No new case fields. Google access is read-only free/busy (`calendar.freebusy` scope); only busy start/end is read, never event details.
 
 ## Production interface (partner events implemented; the rest still to do)
