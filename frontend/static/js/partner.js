@@ -30,7 +30,8 @@ function calendarEntries() {
   for (const job of currentJobs) {
     const unit = job.location?.match(/\bunit[-\s]+(\d+)\b/i);
     const title = unit ? "Unit " + unit[1] : job.partner_job_id;
-    if (job.slot) entries.push({...job.slot, title, detail:job.description, kind:"booked"});
+    const kind = {in_progress:"progress", completed:"completed"}[job.status] || "booked";
+    if (job.slot) entries.push({...job.slot, title, detail:job.description, kind});
     else if (job.status === "received" && job.partner_job_id === proposalId) {
       const start = selections.get(proposalId);
       if (start) entries.push({start, end:new Date(Date.parse(start) + hour).toISOString(), title, detail:job.description, kind:"proposal"});
@@ -81,7 +82,7 @@ function renderCalendar() {
       block.style.top = ((a / 60 - first) / (last - first) * 100) + "%";
       block.style.height = ((b - a) / 60 / (last - first) * 100) + "%";
       const times = timeText.format(start) + "–" + timeText.format(end);
-      const kind = {demo:"Demo visit", proposal:"Proposed", booked:"Booked"}[entry.kind];
+      const kind = {demo:"Demo visit", proposal:"Proposed", booked:"Booked", progress:"In progress", completed:"Completed"}[entry.kind];
       block.title = [kind, entry.title, entry.detail, times].join(" · ");
       block.append(D.el("small", times), D.el("strong", entry.title), D.el("span", entry.kind === "demo" ? entry.detail : kind));
       col.append(block);
