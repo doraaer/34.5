@@ -110,3 +110,5 @@ h2{font-size:27px;letter-spacing:-.035em}
 @media(max-width:980px){.workspace{grid-template-columns:1fr}.schedule{grid-template-columns:1fr 1fr}.card{padding:16px}.planner{width:100%}}
 @media(max-width:520px){.schedule{grid-template-columns:1fr}.calendar-head{padding:16px 12px 5px}.legend{padding-left:12px}.week-nav{flex-shrink:0}}
 .state.urgent{color:#ffb4a8;background:#4a2630}
+.visit.progress{color:var(--on-accent);background:var(--booked-bg);border-left:3px solid #6f4b8f}
+.visit.completed{color:#d8f2e3;background:#2c4a3b;border-left:3px solid #6fbf8f}
