@@ -59,7 +59,8 @@ def send_locally(request):
     return create_partner_job(
         case_id=request["case_id"], service_type=request["service_type"],
         description=request["description"], location=request["location"],
-        available_slots=request["available_slots"])
+        available_slots=request["available_slots"],
+        priority=request.get("priority", "routine"))
 
 def send_via_n8n(request):
     """POST the work order to the n8n dispatch webhook. Never fakes a job: any
@@ -89,6 +90,7 @@ def dispatch_case(case_id):
         "description": case["description"],
         "location": building["address"] + ", " + case["unit_id"],
         "available_slots": case["available_slots"],
+        "priority": case.get("priority", "routine"),
     }
     job = send_via_n8n(request) if os.environ.get("N8N_WEBHOOK_URL") else send_locally(request)
     case["partner_job_id"] = job["partner_job_id"]

@@ -15,7 +15,7 @@ Base: local `http://127.0.0.1:8000`; JSON camel/snake policy: **snake_case**.
 - `GET /partner/services` → heating repair/maintenance offerings
 - `GET /partner/availability` → partner slot list, each with ISO datetime + offset
 - `GET /partner/jobs` → list job records
-- `POST /partner/jobs` → `{"case_id":"CASE-001","service_type":"heating_repair","location":"Musterstrasse 12, Unit 102","description":"Cold radiators","available_slots":[...]}`; returns `partner_job_id`, `status: "received"`
+- `POST /partner/jobs` → `{"case_id":"CASE-001","service_type":"heating_repair","location":"Musterstrasse 12, Unit 102","description":"Cold radiators","available_slots":[...],"priority":"urgent"}`; `priority` is `routine` (default) or `urgent`, copied from the case on dispatch; returns `partner_job_id`, `status: "received"` and `priority`
 - `POST /partner/jobs/{job_id}/accept` → `{"slot":{"start":"2026-11-23T15:00:00+01:00","end":"2026-11-23T16:00:00+01:00"}}`; updates partner and linked Centrix case to scheduled
 - `POST /partner/jobs/{job_id}/start` → in_progress
 - `POST /partner/jobs/{job_id}/complete` → `{"service_report":{"summary":"Heating restored","work_done":"Checked and repaired radiator valve"},"invoice":{"invoice_id":"INV-001","amount_eur":125.0,"currency":"EUR","recipient":"property_owner"}}`; updates core case to completed

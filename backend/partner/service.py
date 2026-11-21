@@ -29,7 +29,7 @@ def require_job(job_id):
         raise HTTPException(404, "partner job not found")
     return job
 
-def create_partner_job(case_id, service_type, description, location, available_slots):
+def create_partner_job(case_id, service_type, description, location, available_slots, priority="routine"):
     with db.LOCK:
         for job in db.all_rows("jobs"):
             if job["case_id"] == case_id:
@@ -41,6 +41,7 @@ def create_partner_job(case_id, service_type, description, location, available_s
             "description": description,
             "location": location,
             "available_slots": available_slots,
+            "priority": priority,
             "status": "received",
             "slot": None,
             "service_report": None,
