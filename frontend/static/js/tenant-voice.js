@@ -54,7 +54,12 @@ if (container && sculpture) {
       caption.textContent = fromUser ? `“${message}”` : message;
       caption.classList.toggle("from-user", fromUser);
     },
-    onToolEvent: ({ result }) => announceCase(result?.case_id),
+    onToolEvent: ({ name, result }) => {
+      if (name === "propose_times_from_calendar") {
+        window.tenantCalendar.propose(window.Dora.storageGet("dora_case_id"), result?.proposals);
+      }
+      announceCase(result?.case_id);
+    },
     onError: message => { state.textContent = message; state.classList.add("error"); },
     onCalendarAdded: ({ label }) => {
       calendar.textContent = `✓ Added to your calendar: ${label}`;
@@ -64,6 +69,7 @@ if (container && sculpture) {
       const link = el("a", "", `Add to your calendar: ${label}`);
       link.href = url;
       link.download = filename;
+      window.tenantCalendar.calendarFile(filename, link);
       calendar.replaceChildren(link);
       calendar.hidden = false;
     },
