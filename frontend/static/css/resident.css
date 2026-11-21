@@ -272,3 +272,57 @@ textarea, select, .panel, .request-item { background-color: #fffefa; color: var(
 }
 @keyframes scene-fade { to { opacity: 0; translate: 0 -24px; } }
 @keyframes scene-enter { from { opacity: .05; translate: 0 30px; } }
+
+@media (min-height: 640px) {
+  #conversation .assistant-stage {
+    --orb-size: clamp(148px,25vmin,245px);
+    justify-content: flex-start;
+    padding-top: calc(50dvh - 64px - var(--orb-size) / 2);
+    padding-bottom: 64px;
+  }
+  .assistant-stage .voice-sculpture { width: var(--orb-size); flex: none; }
+}
+
+/* Resident history and detail share the tinted surfaces of the assistant. */
+#requests {width:min(100%,1000px);padding-bottom:30px}
+#requests #library-title {font-size:clamp(2.5rem,6vw,4.15rem);font-weight:500;letter-spacing:-.065em}
+#requests .workspace {gap:clamp(16px,3vw,36px);align-items:start}
+#requests .panel {min-width:0;border-radius:26px;background:linear-gradient(145deg,#503957e8,#2b1d37f2);border:1px solid #ebcef524;padding:clamp(19px,2.8vw,34px);box-shadow:0 16px 44px #12091e22}
+#requests .panel:has(.request-history) {background:transparent;border:0;box-shadow:none;padding:16px 0}
+#requests .panel h2 {font-weight:500;letter-spacing:-.035em}
+#request-count {color:#dcc7e6;font-size:.8em}
+#requests .request-item {padding:14px 32px 14px 16px;border:0;border-radius:16px;background:transparent;font:500 1rem/1.4 Helvetica,"Helvetica Neue",Arial,sans-serif;transition:background .2s}
+#requests .request-item::after {right:14px;top:calc(50% - .7em)}
+#requests .request-item:hover {background:#e8caff12}
+#requests .request-item[aria-pressed=true] {color:#fff6ff;background:#c99fe52c;box-shadow:inset 3px 0 #d4aef0}
+#requests .request-status {margin-top:4px;font-weight:400;color:#d1bfdc}
+#requests .issue {font-size:clamp(1.35rem,2.5vw,2rem);line-height:1.2;letter-spacing:-.035em;font-weight:500}
+#requests .case-id {font:400 .78rem Helvetica,"Helvetica Neue",Arial,sans-serif;color:#d8c8e0}
+#requests .next-step,#requests .home-strip,#requests .calendar-note {background:#e3c8ee0d;border:1px solid #efd5fc20;border-radius:16px}
+#requests .calendar-note {border-style:solid}
+#requests .timeline li {padding-bottom:15px}
+#requests .timeline li.current:before {background:#dab9f2;box-shadow:0 0 0 4px #d4a4eb20}
+#requests .text-link {color:#e3c6f2;text-underline-offset:4px}
+#requests .case-title .pill {color:#dcc9ee;background:transparent;border:0;box-shadow:none;padding:0;font-size:.82rem;font-weight:500}
+#requests .case-title .pill::before {content:"";display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:7px;background:currentColor;vertical-align:middle}
+#requests .case-title .pending {color:#f4d19a}
+#requests .case-title :is(.confirmed,.success) {color:#addbc9}
+#requests .case-title .attention {color:#ffc0b4}
+#booking .visit-windows {border:0;margin:22px 0 10px;padding:0}
+.visit-windows legend {font-size:.88rem;color:#ebdbf5;margin-bottom:8px}
+#slot {display:grid;gap:6px}
+#slot .visit-option {display:flex;align-items:center;gap:10px;flex-wrap:wrap;cursor:pointer;margin:0;padding:12px 14px;border:1px solid #ceb6dd30;border-radius:14px;background:#e5c8ef09;transition:background .22s,border-color .22s}
+.visit-option input {width:16px;height:16px;margin:0;accent-color:#d7b6ec}
+.visit-option strong {font-weight:500}
+.visit-option span {margin-left:auto;color:#ddcde7;font-variant-numeric:tabular-nums}
+#slot .visit-option:has(:checked) {background:#cf9fe520;border-color:#dcbaee88}
+#requests #dispatch {border-radius:24px}
+#requests .check {padding:6px 0;cursor:pointer}
+#requests #slot-feedback:empty {display:none}
+@media (hover:hover) and (prefers-reduced-motion:no-preference) {
+  #requests :is(.request-item,.text-link,.text-button,#dispatch) {transition:transform .24s,background .24s,color .24s}
+  #requests .request-item:hover {transform:translateX(3px)}
+  #requests :is(.text-button,#dispatch):hover:not(:disabled) {transform:translateY(-2px)}
+  #requests .text-link:hover {color:white}
+  #slot .visit-option:hover {background:#e5c8ef16;border-color:#d9bbe16b}
+}

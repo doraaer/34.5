@@ -56,7 +56,8 @@
       const nodes = cases.map(c => {
         const button = D.el("button", c.description, "request-item");
         button.type = "button"; button.setAttribute("aria-pressed", String(c.case_id === current));
-        button.append(D.el("span", c.case_id + " · " + D.state(c)[0]));
+        button.append(D.el("span", D.state(c)[0], "request-status"));
+        button.title = c.case_id;
         button.onclick = () => choose(c.case_id); return button;
       });
       $("request-list").replaceChildren(...(nodes.length ? nodes : [D.el("p", "No saved requests yet.", "hint")]));
@@ -71,13 +72,23 @@
       const data = await D.api("/partner/availability");
       if (!Array.isArray(data)) throw new Error("Available windows could not be read.");
       windows = data.filter(D.validSlot);
-      const old = $("slot").value;
-      $("slot").replaceChildren(new Option("Choose a time window", ""), ...windows.map((slot, i) => new Option(D.formatSlot(slot), String(i))));
-      if (windows[Number(old)] && old !== "") $("slot").value = old;
-      $("slot-feedback").textContent = windows.length ? "Demo availability supplied by the provider. No calendar has been accessed." : "No provider windows are available. Your request is saved; try again later.";
+      const previous = $("slot").querySelector(":checked")?.value;
+      const date = new Intl.DateTimeFormat("en-GB", {timeZone:"Europe/Berlin", weekday:"short", day:"numeric", month:"short"});
+      const clock = new Intl.DateTimeFormat("en-GB", {timeZone:"Europe/Berlin", hour:"2-digit", minute:"2-digit"});
+      $("slot").replaceChildren(...windows.map(slot => {
+        const start = new Date(slot.start), end = new Date(slot.end);
+        const label = D.el("label", "", "visit-option");
+        const radio = document.createElement("input");
+        radio.type = "radio"; radio.name = "visit-window"; radio.required = true;
+        radio.value = JSON.stringify([slot.start, slot.end]); radio.checked = radio.value === previous;
+        const endDay = date.format(start) === date.format(end) ? "" : date.format(end) + " ";
+        label.append(radio, D.el("strong", date.format(start)), D.el("span", clock.format(start) + "–" + endDay + clock.format(end)));
+        return label;
+      }));
+      $("slot-feedback").textContent = windows.length ? "" : "No provider windows are available. Your request is saved; try again later.";
       $("retry-slots").hidden = windows.length > 0;
     } catch (error) {
-      windows = []; $("slot").replaceChildren(new Option("Windows unavailable", ""));
+      windows = []; $("slot").replaceChildren();
       $("slot-feedback").textContent = error.message + " Your maintenance request is still saved.";
       $("retry-slots").hidden = false;
     } finally { slotsLoading = false; controls(); }
@@ -137,7 +148,8 @@
   $("booking-form").addEventListener("submit", async event => {
     event.preventDefault();
     if (mutation || selected?.status !== "reported") return;
-    const value = $("slot").value, slot = value !== "" ? windows[Number(value)] : null;
+    const value = $("slot").querySelector(":checked")?.value;
+    const slot = windows.find(item => JSON.stringify([item.start, item.end]) === value);
     if (!slot || !$("booking-consent").checked || !$("sharing-consent").checked) {
       D.feedback($("booking-feedback"), "Choose a window and give both permissions before sending.", true); return;
     }

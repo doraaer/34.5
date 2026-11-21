@@ -13,6 +13,7 @@
 
   function draw() {
     const id = record?.case_id;
+    const selectedDay = day.querySelector("input:checked").value;
     const blocks = busy.map(slot => ({slot, label:"Busy", kind:"busy"}));
     const add = (slot, label, kind) => { if (D.validSlot(slot)) blocks.push({slot, label, kind}); };
     let message = connection;
@@ -31,10 +32,10 @@
         }
       }
     }
-    const key = JSON.stringify([day.value, message, blocks, partner?.name, files.get(id)?.href, id]);
+    const key = JSON.stringify([selectedDay, message, blocks, partner?.name, files.get(id)?.href, id]);
     if (signature === key) return;
     signature = key;
-    element("calendar-status").textContent = message;
+    element("calendar-status").textContent = message || (selectedDay < "2026-11-23" || selectedDay > "2026-11-24" ? "Outside the demo calendar coverage." : "");
     element("calendar-days").hidden = Boolean(connection);
     if (connection) return;
     const rows = [];
@@ -45,7 +46,7 @@
       for (const {slot, label, kind} of blocks.slice().sort((a,b) => Date.parse(a.slot.start)-Date.parse(b.slot.start))) {
         const start = new Date(slot.start), end = new Date(slot.end);
         const clock = timeFormat.format(start);
-        if (dateFormat.format(start) !== day.value || Number(clock.slice(0,2)) !== hour) continue;
+        if (dateFormat.format(start) !== selectedDay || Number(clock.slice(0,2)) !== hour) continue;
         const entry = D.el("div", "", "calendar-event " + kind);
         entry.append(D.el("strong", label), D.el("small", clock + "–" + timeFormat.format(end)));
         if (slot.label) entry.title = slot.label;
@@ -75,6 +76,59 @@
     }
     draw();
   }
+  const toggle = element("calendar-toggle"), panel = element("tenant-calendar");
+  let unfolding;
+  function isOpen() { return toggle.getAttribute("aria-expanded") === "true"; }
+  function setOpen(open) {
+    if (open === isOpen()) return;
+    toggle.setAttribute("aria-expanded", String(open));
+    panel.hidden = false;
+    panel.inert = !open;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      unfolding?.cancel();
+      panel.hidden = !open;
+      return;
+    }
+    if (!unfolding) {
+      // Start directly below the calendar icon, then reveal the agenda downwards.
+      unfolding = panel.animate([
+        {clipPath:"inset(0 54px calc(100% - 3px) calc(100% - 98px) round 22px)", opacity:0},
+        {clipPath:"inset(0 0 0 0 round 22px)", opacity:1}
+      ], {duration:420, easing:"cubic-bezier(.22,.75,.25,1)", fill:"both"});
+      unfolding.onfinish = () => {
+        panel.hidden = !isOpen();
+        unfolding.cancel();
+        unfolding = null;
+      };
+      if (!open) unfolding.currentTime = 420;
+    }
+    unfolding.playbackRate = open ? 1 : -1;
+    unfolding.play();
+  }
+  toggle.onclick = () => setOpen(!isOpen());
+  document.addEventListener("click", event => {
+    if (isOpen() && !toggle.parentElement.contains(event.target)) setOpen(false);
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && isOpen()) { setOpen(false); toggle.focus(); }
+  });
+  const monthFormat = new Intl.DateTimeFormat("en-GB", {month:"short", year:"numeric", timeZone:"UTC"});
+  const weekday = new Intl.DateTimeFormat("en-GB", {weekday:"short", timeZone:"UTC"});
+  function shiftDays(offset) {
+    const months = new Set();
+    for (const radio of day.querySelectorAll("input")) {
+      const date = new Date(radio.value + "T12:00:00Z");
+      date.setUTCDate(date.getUTCDate() + offset);
+      radio.value = date.toISOString().slice(0,10);
+      radio.setAttribute("aria-label", date.toLocaleDateString("en-GB", {dateStyle:"full", timeZone:"UTC"}));
+      radio.nextElementSibling.replaceChildren(weekday.format(date) + " ", D.el("b", String(date.getUTCDate())));
+      months.add(monthFormat.format(date));
+    }
+    element("agenda-month").textContent = [...months].join(" – ");
+    draw();
+  }
+  element("earlier-days").onclick = () => shiftDays(-2);
+  element("later-days").onclick = () => shiftDays(2);
   day.onchange = draw;
   window.tenantCalendar = {
     select(next, nextPartner) {
