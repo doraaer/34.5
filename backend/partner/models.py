@@ -8,6 +8,7 @@ class CreatePartnerJob(BaseModel):
     description: str
     location: str
     available_slots: list[Slot]
+    priority: Literal["routine", "urgent"] = "routine"
 
 class AcceptJob(BaseModel):
     slot: Slot
