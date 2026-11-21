@@ -1,0 +1,45 @@
+/* Centrix inherits the shared Helvetica typography and responsive records layout. */
+:root {
+  --bg: #16092a;
+  --panel: #2b1f35;
+  --raised: #392b43;
+  --ink: #f6f0fa;
+  --muted: #cec1d8;
+  --line: #64576f;
+  --accent: #e9daf4;
+}
+
+body {
+  min-height: 100vh;
+  background: radial-gradient(ellipse at top right, #67449878, transparent 50%),
+              linear-gradient(145deg, var(--bg), #31183e 65%, var(--bg));
+}
+
+.topbar { background: #211031; }
+.panel, .skip { background: var(--panel); }
+.records-layout select { background-color: #21162b; border-color: var(--line); }
+.records-layout select option { color: var(--ink); background: var(--panel); }
+
+.intro {
+  border-color: #725884;
+  background: radial-gradient(ellipse at 85% 0%, #674498ab, transparent 58%),
+              linear-gradient(115deg, #301740, #392346 65%, #482657);
+}
+.intro::after {
+  background: linear-gradient(90deg, transparent, #a77dc1 32%, #e5c9f3 56%, transparent);
+}
+
+.pill.neutral { color: var(--ink); background: #46364f; }
+.pill.pending { color: #ffe3cd; background: #503447; }
+.pill.confirmed { color: #f0e4ff; background: #534065; }
+.pill.success { color: #302638; background: #d9c2f1; }
+.pill.attention { color: #ffd6d1; background: #613b47; }
+
+.timeline li::before { background: var(--panel); border-color: var(--line); }
+.timeline li:not(:last-child)::after { border-color: var(--line); }
+.timeline li.done::before { background: var(--accent); border-color: var(--accent); }
+.timeline li.current::before { border-color: #e2c6fb; box-shadow: 0 0 0 3px #584068; }
+.appointment { background: var(--raised); border-color: #8e709e; }
+.appointment h3, .document .amount { color: var(--accent); }
+.empty-symbol, .timeline li.current { color: var(--ink); }
+:focus-visible { outline-color: #dbbfff; }
