@@ -133,8 +133,15 @@ export function createDoraVoice({
 
   async function loadContext() {
     const context = await request("/api/context");
+    // Use the provider's FREE time (working hours minus appointments already booked),
+    // so DORA never offers a slot another tenant already has. Fall back to raw hours if unavailable.
+    let free = context.partner.availability;
+    try {
+      const data = await request("/partner/availability");
+      if (Array.isArray(data)) free = data;
+    } catch { /* keep the raw working windows */ }
     const windows = new Map();
-    for (const { start, end } of context.partner.availability) {
+    for (const { start, end } of free) {
       const last = new Date(end).getTime();
       for (let t = new Date(start).getTime(); t + SLOT_MINUTES * 60000 <= last; t += SLOT_MINUTES * 60000) {
         if (windows.size >= MAX_SLOTS) break;
@@ -310,7 +317,11 @@ export function createDoraVoice({
         throw new ToolError("calendar_unavailable",
           "I wasn't able to read your calendar. Say exactly that to the tenant, then offer the next available slots.");
       }
-      const proposals = new Map((data.proposals ?? []).slice(0, 3).map(({ start, end }, index) => [
+      // Keep only proposals the provider can still take (never a slot that's already booked).
+      const { windows: freeSlots } = await loadContext();
+      const isFree = ({ start, end }) => Array.from(freeSlots.values()).some(w =>
+        Date.parse(w.start) <= Date.parse(start) && Date.parse(end) <= Date.parse(w.end));
+      const proposals = new Map((data.proposals ?? []).filter(isFree).slice(0, 3).map(({ start, end }, index) => [
         `P${index + 1}`, { start, end },
       ]));
       proposalsByApi.set(base, proposals);
@@ -329,13 +340,33 @@ export function createDoraVoice({
     add_appointment_to_calendar: tool("add_appointment_to_calendar", async () => addToCalendar(currentCaseId())),
 
     get_case_status: tool("get_case_status", async () => {
-      const { case_id, status, appointment, service_report } = await request(casePath());
-      return {
+      const current = await request(casePath());
+      const { case_id, status, appointment, service_report, partner_job_id } = current;
+      const result = {
         case_id,
         status,
         appointment: appointment ? labelSlot(appointment) : null,
         service_report: service_report?.summary ?? null,
+        rejected: false,
       };
+      if (status === "needs_attention") {
+        // The heating company declined. Read its reason from the partner job, if it gave one.
+        let reason = null;
+        try {
+          const jobs = await request("/partner/jobs");
+          const job = Array.isArray(jobs) ? jobs.find(j => j.partner_job_id === partner_job_id) : null;
+          if (job?.status === "rejected") reason = job.rejection_reason ?? null;
+        } catch { /* reason stays unknown */ }
+        Object.assign(result, {
+          rejected: true,
+          rejection_reason: reason,
+          description: current.description,
+          priority: current.priority ?? "routine",
+          next_step: "Tell the tenant the heating company declined this request, then offer to find a new time: "
+            + "create a new case with the same description and priority, offer fresh slots, ask both consent questions, dispatch.",
+        });
+      }
+      return result;
     }),
   };
 
