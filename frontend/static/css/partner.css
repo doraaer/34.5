@@ -109,3 +109,8 @@ h2{font-size:27px;letter-spacing:-.035em}
 .visit strong{font-size:12px}.visit small,.visit span{font-size:10px}
 @media(max-width:980px){.workspace{grid-template-columns:1fr}.schedule{grid-template-columns:1fr 1fr}.card{padding:16px}.planner{width:100%}}
 @media(max-width:520px){.schedule{grid-template-columns:1fr}.calendar-head{padding:16px 12px 5px}.legend{padding-left:12px}.week-nav{flex-shrink:0}}
+
+/* Urgent jobs (priority "urgent" from the tenant / DORA). */
+.card.urgent{border-top-color:#ff8a7a;box-shadow:0 0 0 1px #ff8a7a55, 0 10px 28px #ff5a4a1f}
+.urgent-flag{font-size:13px;font-weight:750;letter-spacing:.04em;text-transform:uppercase;color:#3a0f0b;background:#ffb4a8;padding:5px 10px;border-radius:4px}
+.urgent-flag::before{content:"! ";font-weight:900}

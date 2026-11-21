@@ -202,9 +202,16 @@ function incoming(card, job, free) {
 }
 
 function cardFor(job, free) {
-  const card = D.el("section", "", "card");
+  const urgent = job.priority === "urgent";
+  const card = D.el("section", "", "card" + (urgent ? " urgent" : ""));
   const heading = D.el("div", "", "order-heading");
-  heading.append(D.el("span", states[job.status] || job.status, "state " + job.status), D.el("h3", job.description));
+  heading.append(D.el("span", states[job.status] || job.status, "state " + job.status));
+  if (urgent) {
+    const flag = D.el("span", "Urgent", "urgent-flag");
+    flag.title = "The tenant marked this as urgent (no heating or vulnerable people affected)";
+    heading.append(flag);
+  }
+  heading.append(D.el("h3", job.description));
   card.append(heading, D.el("p", job.location, "location"));
   if (job.status === "received") incoming(card, job, free);
   if (job.slot) card.append(D.el("p", "Appointment · " + slotText(job.slot) + " · Berlin time", "record"));
@@ -231,7 +238,10 @@ async function refresh() {
       const pending = rows.filter(job => job.status === "received");
       if (!pending.some(job => job.partner_job_id === proposalId)) proposalId = pending[0]?.partner_job_id;
       if (weekStart === undefined) weekStart = mondayFor(pending[0]?.available_slots[0]?.start || free[0]?.start || rows[0]?.slot?.start || sampleVisits[0][0]);
-      jobs.replaceChildren(...rows.map(job => cardFor(job, free)));
+      // Urgent jobs that still need an answer go to the top; everything else keeps its order.
+      const needsUrgentAnswer = job => job.priority === "urgent" && job.status === "received";
+      const ordered = [...rows.filter(needsUrgentAnswer), ...rows.filter(job => !needsUrgentAnswer(job))];
+      jobs.replaceChildren(...ordered.map(job => cardFor(job, free)));
       if (!rows.length) jobs.textContent = "No incoming jobs yet.";
       renderCalendar();
       signature = next;
