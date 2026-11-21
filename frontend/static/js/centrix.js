@@ -24,6 +24,7 @@
     const container = D.el("div");
     const heading = D.el("div", "", "case-title");
     heading.append(D.el("h2", c.case_id, "case-id"), D.badge(c));
+    if (c.priority === "urgent") heading.append(D.el("span", "Urgent", "pill urgent"));
     container.append(heading, D.el("p", c.description, "issue"));
     if (c.status !== "needs_attention") container.append(D.timeline(c));
     if (["scheduled", "in_progress", "completed"].includes(c.status) && D.validSlot(c.appointment)) {
@@ -40,7 +41,8 @@
       ["Tenant", sameTenant ? context.tenant.name : c.tenant_id],
       ["Property", sameBuilding ? context.building.address : c.building_id], ["Unit", c.unit_id],
       ["Provider", samePartner ? context.partner.name : c.partner_id],
-      ["Provider job", c.partner_job_id || "Not dispatched"], ["Priority", c.priority]
+      ["Provider job", c.partner_job_id || "Not dispatched"], ["Priority", c.priority],
+      ...(c.status === "needs_attention" ? [["Declined by provider", c.rejection_reason || "No reason given"]] : [])
     ]));
     const report = D.el("section", "", "document"); report.append(D.el("h3", "Service report"));
     if (c.service_report && typeof c.service_report === "object") {

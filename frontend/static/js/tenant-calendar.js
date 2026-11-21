@@ -19,7 +19,9 @@
     let message = connection;
     if (!connection) {
       if (confirmed()) {
-        add(record.appointment, "Heating repair — confirmed", "confirmed");
+        const label = {in_progress: "Heating repair — in progress", completed: "Heating repair — completed"}[record.status]
+          || "Heating repair — confirmed";
+        add(record.appointment, label, "confirmed");
       } else if (record?.status === "needs_attention") {
         message = "The heating company declined this time. Nothing is booked.";
       } else if (record?.status === "awaiting_partner") {

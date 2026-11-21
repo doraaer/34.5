@@ -85,7 +85,7 @@
         label.append(radio, D.el("strong", date.format(start)), D.el("span", clock.format(start) + "–" + endDay + clock.format(end)));
         return label;
       }));
-      $("slot-feedback").textContent = windows.length ? "" : "No provider windows are available. Your request is saved; try again later.";
+      $("slot-feedback").textContent = windows.length ? "" : "The heating company has no free times right now. Your request is saved; try again later.";
       $("retry-slots").hidden = windows.length > 0;
     } catch (error) {
       windows = []; $("slot").replaceChildren();
@@ -135,7 +135,7 @@
       current = result.case_id; D.storageSet("dora_case_id", current);
       cases = [result, ...cases.filter(c => c.case_id !== current)];
       $("description").value = ""; $("booking-form").reset(); D.feedback($("booking-feedback"), "");
-      render(); D.feedback($("booking-feedback"), "Request saved. Choose when you can be home, then send it to the provider.");
+      render(); D.feedback($("booking-feedback"), "Request saved. Choose when you can be home, then send it to the heating company.");
       $("urgent").setAttribute("aria-pressed", "false");
       showLibrary(true);
     } catch (error) {
@@ -161,11 +161,11 @@
       stage = "dispatch";
       const result = await D.api("/api/cases/" + encodeURIComponent(id) + "/dispatch", { method: "POST" });
       cases = cases.map(c => c.case_id === id ? result : c);
-      render(); D.feedback($("booking-feedback"), "Request sent. The provider still needs to confirm your appointment.");
+      render(); D.feedback($("booking-feedback"), "Request sent. The heating company still needs to confirm your appointment.");
     } catch (error) {
       D.feedback($("booking-feedback"), error.message + (stage === "dispatch" ? " Your availability was saved. Refresh to check whether the request was sent before trying again." : " Your request is saved, but availability could not be verified. Refresh before trying again."), true);
     } finally {
-      mutation = false; epoch++; $("dispatch").textContent = "Send request to provider"; controls();
+      mutation = false; epoch++; $("dispatch").textContent = "Send request to heating company"; controls();
       await refresh();
     }
   });

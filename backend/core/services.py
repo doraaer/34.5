@@ -128,6 +128,7 @@ def event_update(case_id, partner_job_id, event_type, payload):
         case["status"] = "completed"
     elif event_type == "partner.rejected" and status == "awaiting_partner":
         case["status"] = "needs_attention"
+        case["rejection_reason"] = (payload or {}).get("reason")
     else:
         raise HTTPException(409, f"invalid transition {status} / {event_type}")
     db.save("cases", "case_id", case_id, case)
