@@ -6,7 +6,7 @@ and addresses are made up.
 
 | File | Holds |
 |---|---|
-| `building.json` | Property: address, building year, heating system, energy certificate, units (floor, size, rooms, meters, access notes), owner, contracted heating partner |
+| `building.json` | Property: address, building year, heating system, energy certificate, units (floor, size, rooms, meters, access notes), owner reference, contracted heating partner |
 | `tenants.json` | Tenant: name, unit, contact details, move-in date, lease |
 | `partner.json` | The contracted SHK (heating) partner and its working windows |
 

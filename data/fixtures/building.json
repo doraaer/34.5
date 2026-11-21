@@ -39,6 +39,5 @@
     { "unit_id": "UNIT-106", "floor": 4, "position": "attic", "size_sqm": 48, "rooms": 2 }
   ],
   "service_partner_id": "SHK-001",
-  "owner_id": "OWNER-001",
-  "owner": { "contact_id": "OWNER-001", "name": "Maria Becker (fictional)" }
+  "owner_id": "OWNER-001"
 }
