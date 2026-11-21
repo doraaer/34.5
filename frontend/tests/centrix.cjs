@@ -36,7 +36,7 @@ async function run() {
     assert.equal(await manager.locator("#case-select").inputValue(), id);
 
     await tenant.bringToFront();
-    await tenant.locator("#slot").selectOption("0");
+    await tenant.locator("#slot input").first().check();
     await tenant.locator("#booking-consent").check();
     await tenant.locator("#sharing-consent").check();
     await tenant.locator("#dispatch").click();

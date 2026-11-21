@@ -9,8 +9,28 @@
 </section>
 <div id="dora-app" hidden>
 <a class="skip" href="#main">Skip to content</a>
-<header class="topbar"><a class="brand" href="/tenant">DORA</a><nav><button id="library" aria-label="Saved requests" title="Saved requests" aria-controls="requests" aria-expanded="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path class="archive-lid" d="M3 5.5 12 3l9 2.5v4L12 12 3 9.5z"/><path d="M5 10.2V18l7 3 7-3v-7.8M12 12v9"/></svg></button></nav></header>
-<main id="main" class="shell"><div class="calendar-layout"><section class="welcome" aria-label="DORA home assistant">
+<header class="topbar"><a class="brand" href="/tenant">DORA</a><nav><div class="calendar-control">
+<button id="calendar-toggle" type="button" aria-label="Simulated tenant calendar" title="Simulated tenant calendar" aria-controls="tenant-calendar" aria-expanded="false">
+  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+    <rect x="3.5" y="5" width="17" height="16" rx="4"/><path d="M7.5 3v4m9-4v4M4 10h16"/>
+    <path class="calendar-tick" d="m8.5 15.5 2.2 2 4.8-4.8"/>
+  </svg>
+</button>
+<aside hidden id="tenant-calendar" aria-labelledby="calendar-heading">
+  <h2 id="calendar-heading">Simulated tenant calendar</h2>
+  <p id="calendar-status" aria-live="polite">Loading calendar…</p>
+  <div id="calendar-days" hidden>
+    <div class="calendar-month"><strong id="agenda-month">November 2026</strong><span>Berlin time</span></div>
+    <fieldset class="calendar-picker" id="calendar-day"><legend class="sr-only">Calendar day</legend>
+      <button type="button" class="day-arrow" id="earlier-days" aria-label="Previous two days">‹</button>
+      <label><input type="radio" name="agenda-day" value="2026-11-23" checked><span>Mon <b>23</b></span></label>
+      <label><input type="radio" name="agenda-day" value="2026-11-24"><span>Tue <b>24</b></span></label>
+      <button type="button" class="day-arrow" id="later-days" aria-label="Next two days">›</button>
+    </fieldset>
+    <div id="calendar-agenda"></div>
+  </div>
+</aside></div><button id="library" aria-label="Saved requests" title="Saved requests" aria-controls="requests" aria-expanded="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path class="archive-lid" d="M3 5.5 12 3l9 2.5v4L12 12 3 9.5z"/><path d="M5 10.2V18l7 3 7-3v-7.8M12 12v9"/></svg></button></nav></header>
+<main id="main" class="shell"><section class="welcome" aria-label="DORA home assistant">
 <div id="conversation" hidden>
   <div class="assistant-stage">
     <div class="voice-sculpture" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -38,17 +58,9 @@
 <section class="panel" aria-labelledby="tracking-heading"><div class="section-heading"><div><h2 id="tracking-heading">Your request</h2></div></div>
 <div id="case" aria-live="polite"><div class="empty-state"><span class="empty-symbol" aria-hidden="true">◎</span><h3>No request selected</h3><p>Once you report an issue, its progress and appointment will appear here.</p></div></div>
 <section id="booking" class="booking" hidden aria-labelledby="booking-heading"><h3 id="booking-heading">When can someone visit?</h3><p class="hint">Choose a window when you can be home. These are the fictional provider’s offered windows, not confirmed appointments.</p><div class="calendar-note"><strong>No calendar connected</strong><p>Google and phone calendar connections are not available yet. Choose your availability below.</p></div>
-<form id="booking-form"><fieldset id="booking-fields"><legend class="sr-only">Availability and consent</legend><label for="slot">Your available window · Berlin time</label><select id="slot" required><option value="">Loading available windows…</option></select><button id="retry-slots" class="text-button" type="button" hidden>Reload available windows</button><p id="slot-feedback" class="hint" role="status"></p>
+<form id="booking-form"><fieldset id="booking-fields"><legend class="sr-only">Availability and consent</legend><fieldset class="visit-windows"><legend>Your available window · Berlin time</legend><div id="slot"></div></fieldset><button id="retry-slots" class="text-button" type="button" hidden>Reload available windows</button><p id="slot-feedback" class="hint" role="status"></p>
 <label class="check"><input type="checkbox" id="booking-consent" required><span>I authorize a visit within the selected window.</span></label><label class="check"><input type="checkbox" id="sharing-consent" required><span>I agree to share my address, issue and selected window with the contracted maintenance company.</span></label><button id="dispatch" type="submit" class="primary">Send request to provider</button></fieldset></form>
 <p class="hint">The provider must accept before your appointment is confirmed. You can close this page and check back later.</p></section><p id="booking-feedback" class="feedback" role="status"></p></section></div>
 </section>
-<aside id="tenant-calendar" aria-labelledby="calendar-heading">
-  <h2 id="calendar-heading">Simulated tenant calendar</h2>
-  <p id="calendar-status" aria-live="polite">Loading calendar…</p>
-  <div id="calendar-days" hidden>
-    <label for="calendar-day">Berlin time</label>
-    <select id="calendar-day"><option value="2026-11-23">Monday 23 November 2026</option><option value="2026-11-24">Tuesday 24 November 2026</option></select>
-    <div id="calendar-agenda"></div>
-  </div>
-</aside></div><footer><a href="/partner">Provider demo</a> <a href="/centrix">Centrix demo</a> <span>Fictional resident, provider and Centrix records. The technician diagnoses and repairs the issue.</span></footer></main></div></body></html>
+<footer><a href="/partner">Provider demo</a> <a href="/centrix">Centrix demo</a> <span>Fictional resident, provider and Centrix records. The technician diagnoses and repairs the issue.</span></footer></main></div></body></html>
 
