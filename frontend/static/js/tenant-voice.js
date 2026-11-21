@@ -30,7 +30,27 @@ if (container && sculpture) {
   sculpture.classList.add("voice-trigger");
 
   let voice, connected = false, busy = false;
+  let rate = 1, targetRate = 1, fadeFrame = 0;
+  function easeVoiceMotion(nextRate) {
+    if (nextRate === targetRate) return;
+    targetRate = nextRate;
+    cancelAnimationFrame(fadeFrame);
+    const tracks = sculpture.getAnimations({subtree:true}).filter(animation =>
+      ["voice-speak", "voice-shell"].includes(animation.animationName));
+    if (!tracks.length) return;
+    const start = performance.now(), from = rate;
+    const duration = nextRate < from ? 1450 : 350;
+    function step(now) {
+      const t = Math.min(1, (now - start) / duration);
+      rate = from + (nextRate - from) * t * t * (3 - 2 * t);
+      for (const track of tracks) track.updatePlaybackRate(rate);
+      if (t < 1) fadeFrame = requestAnimationFrame(step);
+    }
+    fadeFrame = requestAnimationFrame(step);
+  }
   const setMode = mode => {
+    if (mode === "speaking") sculpture.classList.add("voice-active");
+    if (sculpture.classList.contains("voice-active")) easeVoiceMotion(mode === "speaking" ? 1 : .14);
     sculpture.classList.toggle("listening", mode === "listening");
     sculpture.classList.toggle("speaking", mode === "speaking");
   };
