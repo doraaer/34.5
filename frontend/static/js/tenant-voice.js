@@ -71,7 +71,11 @@ if (container && sculpture) {
     },
     onMessage: ({ message, role, source }) => {
       const fromUser = (role ?? source) === "user";
-      caption.textContent = fromUser ? `“${message}”` : message;
+      // Keep the caption short: show only the last two sentences of a long reply.
+      const sentences = String(message).match(/[^.!?]+[.!?]*\s*/g) || [String(message)];
+      const shown = sentences.length > 2 ? "…" + sentences.slice(-2).join("").trim() : String(message).trim();
+      caption.textContent = fromUser ? `“${shown}”` : shown;
+      caption.title = String(message);
       caption.classList.toggle("from-user", fromUser);
     },
     onToolEvent: ({ name, result }) => {
