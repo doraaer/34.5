@@ -33,6 +33,7 @@
   }
   function render() {
     selected = cases.find(c => c.case_id === current) || null;
+    window.tenantCalendar.select(selected, context?.partner);
     const signature = JSON.stringify(selected);
     if (signature !== caseSignature) {
       caseSignature = signature;

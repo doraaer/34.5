@@ -1,0 +1,18 @@
+.calendar-layout {display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,310px);gap:24px;align-items:start}
+.calendar-layout > * {min-width:0}
+#tenant-calendar {margin:20px 0;padding:18px;border:1px solid #a58cb455;border-radius:26px;background:#271d33;color:#f3edf8}
+#tenant-calendar h2 {margin:0;font-size:1.15rem}
+#calendar-status {font-size:.85rem;margin:8px 0}
+#calendar-status:empty {display:none}
+#calendar-days label {margin:10px 0 4px;font-weight:400;color:#dacfe3}
+.calendar-hour {display:grid;grid-template-columns:42px 1fr;gap:5px;border-top:1px solid #79678755;min-height:22px;font-size:.72rem;padding-top:3px;color:#cdc0d6}
+#calendar-agenda {margin-top:12px}
+.calendar-event {padding:5px 8px;margin-bottom:4px;border-radius:6px;background:#49454d;color:#fff}
+.calendar-event small,.calendar-event a {display:block;font-size:.75rem}
+.calendar-event.proposal {border:1px dashed #bf9fdb;background:transparent}
+.calendar-event.proposal.first {background:#51405f;border-width:2px}
+.calendar-event.waiting {border:1px solid #e9b65f;background:#473823}
+.calendar-event.approved {border:1px solid #b6a1ca;background:transparent}
+.calendar-event.confirmed {background:#67468a}
+.calendar-event a {color:white}
+@media(max-width:800px){.calendar-layout{grid-template-columns:minmax(0,1fr);gap:0}#tenant-calendar{width:min(100%,350px);justify-self:center}}

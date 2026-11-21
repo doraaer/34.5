@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
+  <defs>
+    <radialGradient id="satin" cx=".34" cy=".25" r=".86">
+      <stop stop-color="#d6c0eb"/><stop offset=".5" stop-color="#b196d1"/>
+      <stop offset=".87" stop-color="#9374b7"/><stop offset="1" stop-color="#aa8ac6"/>
+    </radialGradient>
+    <mask id="house" maskUnits="userSpaceOnUse" x="0" y="0" width="320" height="320">
+      <rect width="320" height="320" fill="white"/>
+      <path d="M153 114 Q158 109 164 114 L202 145 Q209 153 199 154 H197 Q193 154 193 160 V185 Q193 193 185 193 H131 Q122 193 122 185 V161 Q122 155 116 155 Q105 155 111 146 Z"/>
+    </mask>
+  </defs>
+  <style>
+    @media (prefers-reduced-motion: no-preference) {
+      .surface { animation: soften 6s ease-in-out infinite alternate; }
+    }
+    @keyframes soften {
+      from { d: path("M160 62 C219 62 261 104 261 157 S217 245 162 245 C141 245 128 239 114 242 S80 261 73 254 S80 223 78 214 S53 189 53 156 S78 62 160 62 Z"); }
+      to { d: path("M159 64 C216 62 258 99 260 151 S223 245 169 246 C146 247 130 239 115 241 S79 258 72 252 S83 219 79 208 S56 183 55 151 S81 66 159 64 Z"); }
+    }
+  </style>
+  <g mask="url(#house)">
+    <path class="surface" d="M160 62 C219 62 261 104 261 157 S217 245 162 245 C141 245 128 239 114 242 S80 261 73 254 S80 223 78 214 S53 189 53 156 S78 62 160 62 Z" fill="url(#satin)"/>
+  </g>
+</svg>
