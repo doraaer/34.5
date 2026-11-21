@@ -22,7 +22,8 @@ def jobs():
 def create(body: CreatePartnerJob):
     return service.create_partner_job(
         body.case_id, body.service_type, body.description, body.location,
-        [s.model_dump(mode="json") for s in body.available_slots]
+        [s.model_dump(mode="json") for s in body.available_slots],
+        priority=body.priority,
     )
 
 @router.post("/jobs/{job_id}/accept")

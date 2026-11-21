@@ -43,9 +43,12 @@ IDs below illustrate one repair. Use the IDs returned by your running system.
   "service_type": "heating_repair",
   "location": "Musterstrasse 12, Düsseldorf, Germany, UNIT-102",
   "description": "Cold radiator in Unit 102",
-  "available_slots": [{"start":"2026-11-23T15:00:00+01:00","end":"2026-11-23T16:00:00+01:00"}]
+  "available_slots": [{"start":"2026-11-23T15:00:00+01:00","end":"2026-11-23T16:00:00+01:00"}],
+  "priority": "urgent"
 }
 ```
+
+`priority` is `"routine"` (default, may be omitted) or `"urgent"`. Urgent is set when the whole flat is without heating or vulnerable people are affected. The partner should treat urgent jobs first; it does not change which time windows the tenant authorized. Any other value is rejected with 422.
 
 For example, the returned job has `partner_job_id` equal to `JOB-AB12CD34`, the same `case_id`, and status `received`. The case is `awaiting_partner` and its appointment is empty.
 
