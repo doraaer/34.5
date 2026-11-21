@@ -40,9 +40,9 @@ async function run() {
     await tenant.locator("#booking-consent").check();
     await tenant.locator("#sharing-consent").check();
     await tenant.locator("#dispatch").click();
-    await tenant.locator("#case .pill").filter({ hasText: "Waiting for provider" }).waitFor();
+    await tenant.locator("#case .pill").filter({ hasText: "Waiting for heating company" }).waitFor();
     await refresh();
-    await status("Waiting for provider");
+    await status("Waiting for heating company");
     assert.equal(await detail.locator(".appointment").count(), 0);
     await detail.getByText(/Not received yet. The provider/).waitFor();
 

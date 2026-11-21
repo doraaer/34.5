@@ -326,3 +326,4 @@ textarea, select, .panel, .request-item { background-color: #fffefa; color: var(
   #requests .text-link:hover {color:white}
   #slot .visit-option:hover {background:#e5c8ef16;border-color:#d9bbe16b}
 }
+#requests .case-title .pill.urgent {color:#ffb4a8}

@@ -4,11 +4,11 @@
   "use strict";
   const states = {
     reported: ["Reported", "neutral", "Choose your availability and authorize the request below."],
-    awaiting_partner: ["Waiting for provider", "pending", "Your request was sent. The maintenance company has not confirmed an appointment yet."],
-    scheduled: ["Appointment confirmed", "confirmed", "The provider accepted your appointment. Please be home during the confirmed time."],
-    in_progress: ["Work in progress", "confirmed", "The provider has started the repair. We’ll update this record when the work is complete."],
-    completed: ["Completed", "success", "The provider marked the work complete. The service report and invoice are recorded with your case."],
-    needs_attention: ["Needs attention", "attention", "This request needs follow-up. Please contact your property manager. No new appointment has been confirmed."]
+    awaiting_partner: ["Waiting for heating company", "pending", "Your request was sent. The heating company has not confirmed an appointment yet."],
+    scheduled: ["Appointment confirmed", "confirmed", "The heating company accepted your appointment. Please be home during the confirmed time."],
+    in_progress: ["Work in progress", "confirmed", "The technician has started the repair. We’ll update this record when the work is complete."],
+    completed: ["Completed", "success", "The technician marked the work complete. The service report and invoice are recorded with your case."],
+    needs_attention: ["Declined by heating company", "attention", "The heating company couldn’t take this appointment. Nothing is booked. Ask DORA to find a new time, or contact your property manager."]
   };
   const steps = ["reported", "awaiting_partner", "scheduled", "in_progress", "completed"];
   function el(tag, text = "", className = "") {
@@ -51,17 +51,18 @@
   }
   function formatSlot(slot) {
     if (!validSlot(slot)) return "Time details unavailable";
-    const fmt = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
-    return fmt.format(new Date(slot.start)) + " – " + fmt.format(new Date(slot.end)) + " · Berlin time";
+    // Same style as the provider page: "Mon 23 Nov, 15:00–16:00" (date written once).
+    const fmt = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+    return fmt.formatRange(new Date(slot.start), new Date(slot.end)) + " · Berlin time";
   }
   function state(caseData) { return states[caseData.status] || ["Status unavailable", "neutral", "Refresh to check the latest information."]; }
   function badge(caseData) { const s = state(caseData); return el("span", s[0], "pill " + s[1]); }
   function appointment(caseData) {
     if (!["scheduled", "in_progress", "completed"].includes(caseData.status)) return null;
     const box = el("section", "", "appointment");
-    box.append(el("h3", caseData.status === "scheduled" ? "Your confirmed appointment" : "Accepted appointment"));
+    box.append(el("h3", caseData.status === "completed" ? "Appointment (completed)" : "Your confirmed appointment"));
     box.append(el("p", formatSlot(caseData.appointment)));
-    if (!validSlot(caseData.appointment)) box.append(el("p", "The provider’s time details are missing. Please check with your property manager.", "hint"));
+    if (!validSlot(caseData.appointment)) box.append(el("p", "The heating company’s time details are missing. Please check with your property manager.", "hint"));
     return box;
   }
   function timeline(caseData) {
@@ -79,11 +80,15 @@
     const box = el("div");
     const title = el("div", "", "case-title");
     title.append(el("span", caseData.case_id, "case-id"), badge(caseData));
+    if (caseData.priority === "urgent") title.append(el("span", "Urgent", "pill urgent"));
     box.append(title, el("p", caseData.description, "issue"));
     const message = caseData.status === "completed" && (!caseData.service_report || !caseData.invoice)
       ? "The case is marked completed, but its documents are incomplete. Please contact your property manager."
       : state(caseData)[2];
     box.append(el("p", message, caseData.status === "needs_attention" ? "attention-box" : "next-step"));
+    if (caseData.status === "needs_attention" && caseData.rejection_reason) {
+      box.append(el("p", "Reason given: " + caseData.rejection_reason, "hint"));
+    }
     const slot = appointment(caseData);
     if (slot) box.append(slot);
     if (caseData.status !== "needs_attention") box.append(timeline(caseData));

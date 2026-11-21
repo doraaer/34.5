@@ -43,3 +43,4 @@ body {
 .appointment h3, .document .amount { color: var(--accent); }
 .empty-symbol, .timeline li.current { color: var(--ink); }
 :focus-visible { outline-color: #dbbfff; }
+.pill.urgent { color: #ffb4a8; background: #4a2630; }
