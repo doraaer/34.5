@@ -1,27 +1,44 @@
 {
+  "_note": "Fictional demo property in the shape of the reltix centrix property snapshot. Not real data.",
   "building_id": "BUILDING-001",
   "address": "Musterstrasse 12, Düsseldorf, Germany",
+  "address_parts": {
+    "street": "Musterstrasse 12",
+    "postal_code": "40210",
+    "city": "Düsseldorf",
+    "country": "DE"
+  },
+  "building_year": 1972,
   "heating_type": "gas central heating",
+  "heating_system": {
+    "type": "gas central heating",
+    "location": "boiler room, basement",
+    "last_service": "2026-03-12",
+    "service_partner_id": "SHK-001"
+  },
+  "energy_certificate": { "class": "E", "valid_until": "2029-03-31" },
   "units": [
+    { "unit_id": "UNIT-101", "floor": 1, "position": "left", "size_sqm": 54, "rooms": 2 },
     {
-      "unit_id": "UNIT-101"
+      "unit_id": "UNIT-102",
+      "floor": 2,
+      "position": "left",
+      "size_sqm": 68,
+      "rooms": 3,
+      "radiators": 4,
+      "meters": [
+        { "type": "electricity", "number": "1ESY1160123456" },
+        { "type": "gas", "number": "G4-0098123" },
+        { "type": "heat_cost_allocator", "number": "HCA-102-1..4" }
+      ],
+      "access_notes": "Front door code at the property manager. Bell label 'Demo', 2nd floor left."
     },
-    {
-      "unit_id": "UNIT-102"
-    },
-    {
-      "unit_id": "UNIT-103"
-    },
-    {
-      "unit_id": "UNIT-104"
-    },
-    {
-      "unit_id": "UNIT-105"
-    },
-    {
-      "unit_id": "UNIT-106"
-    }
+    { "unit_id": "UNIT-103", "floor": 2, "position": "right", "size_sqm": 72, "rooms": 3 },
+    { "unit_id": "UNIT-104", "floor": 3, "position": "left", "size_sqm": 68, "rooms": 3 },
+    { "unit_id": "UNIT-105", "floor": 3, "position": "right", "size_sqm": 72, "rooms": 3 },
+    { "unit_id": "UNIT-106", "floor": 4, "position": "attic", "size_sqm": 48, "rooms": 2 }
   ],
   "service_partner_id": "SHK-001",
-  "owner_id": "OWNER-001"
+  "owner_id": "OWNER-001",
+  "owner": { "contact_id": "OWNER-001", "name": "Thomas Weber (fictional)" }
 }

@@ -1,8 +1,19 @@
 [
   {
     "tenant_id": "TENANT-001",
+    "contact_id": "TENANT-001",
     "name": "Lena Demo",
     "unit_id": "UNIT-102",
-    "email": "lena@example.invalid"
+    "email": "lena@example.invalid",
+    "phone": "+49 151 00000000",
+    "preferred_language": "en",
+    "move_in": "2024-03-01",
+    "lease": {
+      "type": "lease",
+      "start": "2024-03-01",
+      "rent_cold_eur": 780,
+      "service_charges_eur": 210,
+      "heating_included_in_service_charges": true
+    }
   }
 ]
