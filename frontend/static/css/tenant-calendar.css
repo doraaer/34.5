@@ -1,6 +1,22 @@
-.calendar-layout {display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,310px);gap:24px;align-items:start}
-.calendar-layout > * {min-width:0}
-#tenant-calendar {margin:20px 0;padding:18px;border:1px solid #a58cb455;border-radius:26px;background:#271d33;color:#f3edf8}
+.calendar-control {position:relative}
+#calendar-toggle {height:44px;width:44px;display:grid;place-items:center;border-radius:50%;color:#fff;border:1px solid #dfbdf042;background:linear-gradient(145deg,#ffffff1a,#b49bd713);transition:transform .3s,background-color .3s}
+#calendar-toggle svg {width:23px;height:23px}
+.calendar-tick {transform-origin:center;transition:transform .3s}
+@media(hover:hover){#calendar-toggle:hover {transform:translateY(-3px);background-color:#594363}#calendar-toggle:hover .calendar-tick {transform:scale(1.15)}}
+#dora-app .topbar { padding-inline: clamp(16px, 2vw, 36px); }
+#dora-app .topbar nav { gap: 10px; }
+#tenant-calendar {
+  position:absolute; top:calc(100% + 8px); right:-54px;
+  width:clamp(240px, calc(50vw - 150px), 316px);
+  max-height:calc(100dvh - 84px); overflow:auto; overscroll-behavior:contain;
+  margin:0; padding:16px; border:1px solid #baa3cc55; border-radius:22px;
+  color:#f3edf8; background:linear-gradient(150deg,#382a46,#251d30);
+  box-shadow:0 14px 38px #110a2245; scrollbar-width:thin;
+}
+#calendar-toggle[aria-expanded="true"] { background-color:#655078; }
+@media(max-width:760px) {
+  #tenant-calendar {width:min(316px,calc(100vw - 32px));max-height:max(145px,calc(50dvh - 180px));}
+}
 #tenant-calendar h2 {margin:0;font-size:1.15rem}
 #calendar-status {font-size:.85rem;margin:8px 0}
 #calendar-status:empty {display:none}
@@ -15,4 +31,17 @@
 .calendar-event.approved {border:1px solid #b6a1ca;background:transparent}
 .calendar-event.confirmed {background:#67468a}
 .calendar-event a {color:white}
-@media(max-width:800px){.calendar-layout{grid-template-columns:minmax(0,1fr);gap:0}#tenant-calendar{width:min(100%,350px);justify-self:center}}
+#tenant-calendar, #requests {font-family:Helvetica,"Helvetica Neue",Arial,sans-serif}
+.calendar-month {display:flex;align-items:baseline;justify-content:space-between;margin:16px 0 9px}
+.calendar-month strong {font-size:.94rem;font-weight:500}
+.calendar-month span {font-size:.72rem;color:#d2bedf}
+#calendar-day {display:flex;gap:4px;margin:0;padding:4px;border:0;border-radius:16px;background:#160e226b}
+#calendar-day label {flex:1;position:relative;margin:0;cursor:pointer}
+#calendar-day input {position:absolute;opacity:0;width:1px;height:1px}
+#calendar-day span {display:flex;align-items:baseline;justify-content:center;gap:7px;padding:10px 5px;border-radius:12px;color:#dfcee9;transition:background .2s,color .2s}
+#calendar-day b {font-size:1.13rem;font-weight:500}
+#calendar-day input:checked + span {background:#dfcdec;color:#302039}
+#calendar-day input:focus-visible + span {outline:2px solid white;outline-offset:2px}
+.calendar-hour {border-color:#b69eb61c}
+#calendar-day .day-arrow {border:0;background:transparent;color:#e8d7ef;padding:4px 9px;font-size:20px;border-radius:12px;cursor:pointer}
+#calendar-day .day-arrow:hover {background:#e6c7fc1a}
