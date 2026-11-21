@@ -13,8 +13,8 @@
     "_note": "Filled by agent/web/dora-voice.js from /api/context before the session starts, so DORA needs no lookup mid-call. Placeholders: tenant_name='there', others='unknown'.",
     "names": ["tenant_name", "unit_id", "building_address", "heating_type", "partner_name", "available_slots"]
   },
-  "temperature": 0.5,
-  "conversation_style": "goal-based prompt, brief: ~4 questions per booking (problem, calendar check, one combined consent + add-to-calendar question), one-sentence turns; hard rules enforced in tools",
+  "temperature": 0.6,
+  "conversation_style": "goal-based prompt, brief: ~4 questions per booking (problem, calendar check, one combined consent + add-to-calendar question), one or two natural sentences per turn; hard rules enforced in tools",
   "listening": {
     "background_voice_detection": true,
     "turn_eagerness": "patient",
